@@ -43,6 +43,35 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { batchCost, unitCost, suggestedPrice, margin, targetMargin, quantity, currency: 'INR' });
     } catch (error) { return send(res, 400, { error: error.message }); }
   }
+  if (req.method === 'POST' && req.url === '/api/ai/chat') {
+    try {
+      if (!process.env.OPENROUTER_API_KEY) return send(res, 503, { error: 'AI is not configured yet' });
+      const input = await readBody(req);
+      const message = String(input.message || '').trim();
+      if (!message) return send(res, 400, { error: 'Message is required' });
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': process.env.OPENROUTER_SITE_URL || 'https://app.nuttywonders.com',
+          'X-Title': 'NuttyWonders Studio'
+        },
+        body: JSON.stringify({
+          model: process.env.OPENROUTER_MODEL || 'openrouter/free',
+          messages: [
+            { role: 'system', content: 'You are NuttyWonders Cost Copilot. Help a small Indian snack business calculate batch cost, unit cost, selling price, gross margin, and simple product decisions. Use INR (₹), show concise maths, and never invent inventory or orders. If numbers are missing, ask for them.' },
+            { role: 'user', content: message }
+          ],
+          temperature: 0.2,
+          max_tokens: 350
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok) return send(res, response.status, { error: payload?.error?.message || 'OpenRouter request failed' });
+      return send(res, 200, { reply: payload?.choices?.[0]?.message?.content || 'I could not calculate that just yet.' });
+    } catch (error) { return send(res, 502, { error: error.message }); }
+  }
   send(res, 404, { error: 'Not found' });
 });
 
