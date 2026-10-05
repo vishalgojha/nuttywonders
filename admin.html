@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NuttyWonders — Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/"><img class="brand-logo" src="assets/nuttywonders-logo.png" alt="NuttyWonders" /></a>
+    <div class="workspace"><span class="status-dot"></span><span>Wonders Studio</span><small>Owner workspace</small></div>
+    <nav><a class="active" href="#overview">◈ <span>Overview</span></a><a href="#products">▣ <span>Products</span></a><a href="#assistant">✦ <span>Cost assistant</span><b>AI</b></a></nav>
+    <a class="view-store" href="/">View storefront <span>↗</span></a>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div><p class="eyebrow">Monday, 05 October 2026</p><h1>Good morning, Kavita <span>✦</span></h1></div><div class="top-actions"><span class="sync"><i></i> Saved locally</span><button class="avatar">K</button></div></header>
+    <section class="stats" id="overview"><article><span>Live products</span><strong id="stat-products">0</strong><small>On your storefront</small></article><article><span>Average margin</span><strong id="stat-margin">0%</strong><small>Across costed products</small></article><article><span>Inventory value</span><strong id="stat-inventory">₹0</strong><small>At selling price</small></article><article class="accent"><span>Studio tip</span><strong>Price with confidence.</strong><small>Use the assistant below to model every batch.</small></article></section>
+    <div class="content-grid">
+      <section class="panel products-panel" id="products"><div class="panel-head"><div><p class="eyebrow">Your pantry</p><h2>Products</h2></div><button class="button button-dark" id="new-product">+ Add product</button></div><div class="toolbar"><label class="search"><span>⌕</span><input id="search" placeholder="Search products..." /></label><select id="category-filter"><option value="all">All categories</option><option value="granola">Granola</option><option value="bites">Bites</option><option value="bars">Bars & treats</option></select></div><div class="product-list" id="product-list"></div></section>
+      <section class="panel assistant-panel" id="assistant"><div class="panel-head"><div><p class="eyebrow">Your numbers, made simple</p><h2>Cost assistant <span class="spark">✦</span></h2></div><span class="ai-pill">AI copilot</span></div><p class="assistant-intro">Ask me anything about a batch, pricing or margins. I’ll do the maths with the numbers you give me.</p><div class="quick-prompts"><button data-prompt="I made 10 packs and spent ₹850. What is my cost per pack?">Cost per pack</button><button data-prompt="If my cost is ₹120, what should I charge for a 45% margin?">Price for 45% margin</button><button data-prompt="What is my margin if I sell for ₹349 and my cost is ₹160?">Check a margin</button></div><div class="chat" id="chat"><div class="message bot">Hi! Tell me your ingredient cost, pack count, or target margin and I’ll help you price it. <span>✦</span></div></div><form class="chat-form" id="chat-form"><input id="chat-input" placeholder="e.g. cost is ₹140, price is ₹320" autocomplete="off" /><button aria-label="Ask assistant">→</button></form></section>
+    </div>
+  </main>
+  <div class="modal" id="product-modal"><div class="modal-card"><button class="close" id="close-modal">×</button><div class="modal-head"><p class="eyebrow">Product details</p><h2 id="form-title">Add a product</h2><p>Everything here appears in your storefront.</p></div><form id="product-form"><input type="hidden" id="product-id" /><div class="form-grid"><label class="upload"><input type="file" id="image-file" accept="image/*" /><span id="upload-copy">＋<b>Upload product image</b><small>JPG, PNG up to 5 MB</small></span><img id="image-preview" alt="Product preview" /></label><div class="fields"><label>Product name<input id="name" required placeholder="e.g. Almond Date Bites" /></label><div class="two"><label>Category<select id="category"><option value="granola">Granola</option><option value="bites">Bites</option><option value="bars">Bars & treats</option></select></label><label>Pack size<input id="pack" value="200 g" /></label></div><div class="two"><label>Selling price (₹)<input id="price" type="number" min="0" required placeholder="299" /></label><label>Stock (packs)<input id="stock" type="number" min="0" value="0" /></label></div><label>Short description<textarea id="description" rows="3" placeholder="A quick, delicious description..."></textarea></label><label>Ingredients <input id="ingredients" placeholder="Dates, almonds, cocoa" /></label></div></div><div class="cost-box"><div><p class="eyebrow">Unit economics <span>optional</span></p><h3>Know your real cost</h3></div><div class="cost-grid"><label>Ingredients ₹<input id="ingredient-cost" type="number" min="0" value="0" /></label><label>Packaging ₹<input id="packaging-cost" type="number" min="0" value="0" /></label><label>Labour ₹<input id="labour-cost" type="number" min="0" value="0" /></label><label>Overheads ₹<input id="overhead-cost" type="number" min="0" value="0" /></label></div><div class="cost-result"><span>Unit cost <strong id="unit-cost">₹0</strong></span><span>Gross margin <strong id="unit-margin">0%</strong></span><span>Suggested price <strong id="suggested-price">₹0</strong></span></div></div><div class="form-actions"><button type="button" class="button button-ghost" id="cancel-form">Cancel</button><button class="button button-dark" type="submit">Save product <span>→</span></button></div></form></div></div>
+  <div class="toast" id="toast"></div><script src="admin.js"></script>
+</body>
+</html>

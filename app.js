@@ -1,4 +1,4 @@
-const products=[
+const defaultProducts=[
  {id:'chocolate-granola',name:'Chocolate Granola',category:'granola',price:320,color:'brown',tag:'Bestseller',desc:'Crunchy rolled oats, nuts and rich cocoa baked into a deliciously wholesome breakfast and snack.',ingredients:['Rolled oats','Honey','Almonds','Kodo millet','Cocoa'],image:null},
  {id:'berries-granola',name:'Berries Granola',category:'granola',price:320,color:'orange',tag:'Fruity crunch',desc:'Crispy granola infused with the goodness of berries for a fruity, wholesome crunch.',ingredients:['Rolled oats','Jowar flakes','Almonds','Dried strawberry','Dried cranberry'],image:null},
  {id:'apple-cinnamon',name:'Apple Cinnamon Granola',category:'granola',price:320,color:'yellow',tag:'New',desc:'A comforting blend of apples, cinnamon and crunchy oats that brings warmth to every bite.',ingredients:['Rolled oats','Honey','Grated apple','Almonds','Cinnamon'],image:null},
@@ -8,6 +8,7 @@ const products=[
  {id:'crunchy-munchy',name:'Crunchy Munchy Snack',category:'bars',price:259,color:'orange',tag:'Crowd favourite',desc:'A crunchy medley of oats, millets, nuts and tangy spices that makes healthy snacking irresistible.',ingredients:['Rolled oats','Peanuts','Bajra flakes','Cashews','Tamarind'],image:'assets/crunchy-munchy.png'},
  {id:'ragi-brownie',name:'Ragi Brownie',category:'bars',price:299,color:'brown',tag:'Soft & fudgy',desc:'Soft, fudgy brownies made with wholesome ingredients for a richer, more mindful indulgence.',ingredients:['Ragi flour','Wheat flour','Jaggery','Cocoa powder','Chocolate'],image:'assets/ragi-brownie.png'}
 ];
+const products=JSON.parse(localStorage.getItem('nutty-products-admin')||'null')||defaultProducts;
 let cart=JSON.parse(localStorage.getItem('nutty-cart')||'[]');let currentProduct=null;
 const $=s=>document.querySelector(s);const $$=s=>document.querySelectorAll(s);
 function imageMarkup(p,small=false){return p.image?`<div class="product-image photo ${p.color}"><img src="${p.image}" alt="${p.name}"></div>`:`<div class="product-image ${p.color}"><div class="shape"></div></div>`}
