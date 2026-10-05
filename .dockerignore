@@ -1,0 +1,8 @@
+.git
+.agents
+.codex
+outputs
+work
+*.xlsx
+*.pdf
+README.md
