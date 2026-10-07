@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NuttyWonders — Studio</title>
+  <meta name="theme-color" content="#1d300f" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="/manifest-studio.json" />
+  <link rel="icon" href="/assets/nuttywonders-icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <div class="login-screen" id="login-screen">
+    <form class="login-card" id="login-form">
+      <a class="brand" href="/"><img class="brand-logo" src="assets/nuttywonders-logo.png" alt="NuttyWonders" /></a>
+      <p class="eyebrow">Owner workspace</p>
+      <h1>Welcome back</h1>
+      <p class="login-copy">Sign in with the email and password you use for NuttyWonders.</p>
+      <label>Email<input id="login-email" type="email" autocomplete="username" required placeholder="Kavita@nuttywonders.com" /></label>
+      <label>Password<input id="login-password" type="password" autocomplete="current-password" required /></label>
+      <p class="login-error" id="login-error"></p>
+      <button class="button button-dark" type="submit" id="login-submit">Sign in</button>
+      <a class="text-link" href="/">← Back to the storefront</a>
+    </form>
+  </div>
+
+  <div class="studio" id="studio" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="/"><img class="brand-logo" src="assets/nuttywonders-logo.png" alt="NuttyWonders" /></a>
+      <div class="workspace"><span class="status-dot" id="wa-dot"></span><span id="wa-label">Connecting…</span><small>WhatsApp</small></div>
+      <nav>
+        <a class="active" href="#overview">◈ <span>Overview</span></a>
+        <a href="#orders">▤ <span>Orders</span><b id="nav-order-count">0</b></a>
+        <a href="#products">▣ <span>Products</span></a>
+        <a href="#messages">✉ <span>Messages</span></a>
+        <a href="#broadcast">✦ <span>Broadcast</span></a>
+        <a href="#settings">⚙ <span>Settings</span></a>
+      </nav>
+      <a class="view-store" href="/">View storefront <span>↗</span></a>
+      <button class="sign-out" id="sign-out">Sign out</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><p class="eyebrow" id="today">Studio</p><h1>Good to see you, Kavita <span>✦</span></h1></div>
+        <div class="top-actions"><span class="sync" id="sync-state"><i></i> Synced</span><button class="avatar">K</button></div>
+      </header>
+
+      <section class="stats" id="overview">
+        <article><span>Orders</span><strong id="stat-orders">0</strong><small><span id="stat-new">0</span> waiting on you</small></article>
+        <article><span>Live products</span><strong id="stat-products">0</strong><small>On your storefront</small></article>
+        <article><span>Average margin</span><strong id="stat-margin">0%</strong><small>Across costed products</small></article>
+        <article><span>Pending payments</span><strong id="stat-pending">0</strong><small>Awaiting UPI screenshots</small></article>
+        <article class="accent"><span>WhatsApp queue</span><strong id="stat-queue">0</strong><small id="stat-jid">Not linked yet</small></article>
+      </section>
+
+      <section class="panel" id="orders">
+        <div class="panel-head">
+          <div><p class="eyebrow">Live orders</p><h2>Orders</h2></div>
+          <div class="toolbar-inline">
+            <select id="order-status"><option value="all">All statuses</option><option value="new">New</option><option value="confirmed">Confirmed</option><option value="packed">Packed</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select>
+            <label class="search"><span>⌕</span><input id="order-search" placeholder="Code, name or phone" /></label>
+            <button class="button button-ghost" id="new-order">+ New order</button>
+          </div>
+        </div>
+        <div class="order-list" id="order-list"></div>
+      </section>
+
+      <section class="panel" id="products">
+        <div class="panel-head">
+          <div><p class="eyebrow">Your pantry</p><h2>Products</h2></div>
+          <div class="toolbar-inline">
+            <label class="search"><span>⌕</span><input id="search" placeholder="Search products..." /></label>
+            <select id="category-filter"><option value="all">All categories</option><option value="granola">Granola</option><option value="bites">Bites</option><option value="bars">Bars & treats</option></select>
+            <button class="button button-dark" id="new-product">+ Add product</button>
+          </div>
+        </div>
+        <div class="product-list" id="product-list"></div>
+      </section>
+
+      <section class="panel" id="messages">
+        <div class="panel-head">
+          <div><p class="eyebrow">WhatsApp inbox</p><h2>Messages</h2></div>
+          <div class="toolbar-inline">
+            <label class="search"><span>⌕</span><input id="message-phone" placeholder="Phone number" /></label>
+            <button class="button button-ghost" id="refresh-messages">Refresh</button>
+          </div>
+        </div>
+        <div class="message-list" id="message-list"></div>
+        <form class="quick-reply" id="quick-reply">
+          <input id="reply-phone" placeholder="Phone number" required />
+          <input id="reply-body" placeholder="Write a message…" required />
+          <button class="button button-dark" type="submit">Send</button>
+        </form>
+      </section>
+
+      <section class="panel" id="broadcast">
+        <div class="panel-head"><div><p class="eyebrow">Reach your regulars</p><h2>Broadcast</h2></div></div>
+        <form class="broadcast-form" id="broadcast-form">
+          <label>Title<input id="broadcast-title" placeholder="New drop alert" required /></label>
+          <label>Audience<select id="broadcast-segment">
+            <option value="past_customers">Past customers</option>
+            <option value="opt_in">Opted in only</option>
+            <option value="all_customers">All customers</option>
+          </select></label>
+          <label class="full">Message<textarea id="broadcast-body" rows="4" placeholder="Hi! Our new ragi brownie batch just landed…" required></textarea></label>
+          <div class="form-actions"><button class="button button-ghost" type="button" id="broadcast-draft">Save draft</button><button class="button button-dark" type="submit">Send broadcast</button></div>
+        </form>
+        <div class="broadcast-list" id="broadcast-list"></div>
+      </section>
+
+      <section class="panel" id="settings">
+        <div class="panel-head"><div><p class="eyebrow">Shop details</p><h2>Settings</h2></div></div>
+        <div class="settings-grid" id="settings-grid"></div>
+        <div class="wa-panel">
+          <div><p class="eyebrow">WhatsApp connection</p><h3 id="wa-heading">Link your number</h3><p id="wa-detail">Scan the QR code from WhatsApp → Linked devices to link this shop.</p></div>
+          <div class="wa-actions">
+            <div class="qr-box" id="qr-box" hidden></div>
+            <button class="button button-ghost" id="pair-code">Send pairing code</button>
+            <button class="button button-ghost danger" id="wa-logout">Unlink</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="product-modal"><div class="modal-card">
+    <button class="close" id="close-modal">×</button>
+    <div class="modal-head"><p class="eyebrow">Product details</p><h2 id="form-title">Add a product</h2><p>Everything here appears in your storefront.</p></div>
+    <form id="product-form">
+      <input type="hidden" id="product-id" />
+      <label>Product name<input id="name" required placeholder="e.g. Almond Date Bites" /></label>
+      <label>Short line <span class="optional">shown as the product tag</span><input id="tagline" placeholder="Everyday favourite" /></label>
+      <div class="two"><label>Category<select id="category"><option value="granola">Granola</option><option value="bites">Bites</option><option value="bars">Bars & treats</option></select></label><label>Pack size (g)<input id="pack" type="number" min="1" value="200" /></label></div>
+      <div class="two"><label>Selling price (₹)<input id="price" type="number" min="0" step="0.01" required placeholder="299" /></label><label>Stock (packs)<input id="stock" type="number" min="0" value="0" /></label></div>
+      <label>Description<textarea id="description" rows="3" placeholder="A quick, delicious description..."></textarea></label>
+      <label>Ingredients <span class="optional">comma separated</span><input id="ingredients" placeholder="Dates, almonds, cocoa" /></label>
+      <label>Allergen note <span class="optional">comma separated</span><input id="allergens" placeholder="Nuts, dairy" /></label>
+      <div class="cost-box"><div><p class="eyebrow">Unit economics <span class="optional">optional</span></p><h3>Know your real cost</h3></div>
+        <div class="cost-grid"><label>Ingredients ₹<input id="ingredient-cost" type="number" min="0" step="0.01" value="0" /></label><label>Packaging ₹<input id="packaging-cost" type="number" min="0" step="0.01" value="0" /></label><label>Labour ₹<input id="labour-cost" type="number" min="0" step="0.01" value="0" /></label><label>Overheads ₹<input id="overhead-cost" type="number" min="0" step="0.01" value="0" /></label></div>
+        <div class="cost-result"><span>Unit cost <strong id="unit-cost">₹0.00</strong></span><span>Gross margin <strong id="unit-margin">0%</strong></span><span>Margin at this price <strong id="unit-price-margin">0%</strong></span></div>
+      </div>
+      <label class="checkbox"><input id="active" type="checkbox" checked /> Live on the storefront</label>
+      <div class="form-actions"><button type="button" class="button button-ghost" id="cancel-form">Cancel</button><button class="button button-dark" type="submit">Save product <span>→</span></button></div>
+    </form>
+  </div></div>
+
+  <div class="modal" id="order-modal"><div class="modal-card">
+    <button class="close" id="close-order-modal">×</button>
+    <div class="modal-head"><p class="eyebrow">Take an order</p><h2 id="order-form-title">New order</h2></div>
+    <form id="order-form">
+      <input type="hidden" id="order-id" />
+      <div class="two"><label>Customer name<input id="order-customer" required /></label><label>WhatsApp number<input id="order-phone" type="tel" required placeholder="81083 98025" /></label></div>
+      <label>Address<input id="order-address" /></label>
+      <div class="two"><label>City<input id="order-city" /></label><label>Pincode<input id="order-pincode" inputmode="numeric" /></label></div>
+      <div id="order-lines" class="order-edit-lines"></div>
+      <button class="button button-ghost" type="button" id="add-order-line">+ Add item</button>
+      <div class="form-actions"><button type="button" class="button button-ghost" id="cancel-order-form">Cancel</button><button class="button button-dark" type="submit">Save order</button></div>
+    </form>
+  </div></div>
+
+  <div class="toast" id="toast"></div>
+  <script src="qr.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

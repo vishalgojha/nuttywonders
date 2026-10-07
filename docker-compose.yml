@@ -1,0 +1,49 @@
+# NuttyWonders: static storefront (nginx) + Go WhatsApp/checkout bridge.
+#
+# Coolify-friendly: no env_file. Secrets and settings come in as ${VAR}
+# interpolation — locally from .env, on Coolify from the resource's
+# Environment Variables. The bridge is never exposed on a public port;
+# Coolify routes the web container's domain and nginx proxies /api and
+# /healthz to the internal `bridge` service.
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - bridge
+    networks:
+      - app
+
+  bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile.bridge
+    restart: unless-stopped
+    environment:
+      BRIDGE_ADDR: ":8081"
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL:-http://localhost:8081}"
+      SUPABASE_URL: "${SUPABASE_URL}"
+      SUPABASE_SERVICE_KEY: "${SUPABASE_SERVICE_KEY}"
+      RAZORPAY_KEY_ID: "${RAZORPAY_KEY_ID}"
+      RAZORPAY_KEY_SECRET: "${RAZORPAY_KEY_SECRET}"
+      RAZORPAY_WEBHOOK_SECRET: "${RAZORPAY_WEBHOOK_SECRET}"
+      WHATSAPP_DB: "file:/data/whatsmeow.db?_foreign_keys=on"
+      WHATSAPP_DB_DIALECT: sqlite3
+    volumes:
+      - bridge-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8081/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - app
+
+volumes:
+  bridge-data:
+
+networks:
+  app:

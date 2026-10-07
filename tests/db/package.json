@@ -1,0 +1,14 @@
+{
+  "name": "nuttywonders-db-check",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Runs the migrations and seed against an in-process Postgres and asserts the schema, RLS, RPCs and costing figures.",
+  "scripts": {
+    "test": "node check.mjs"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.8"
+  }
+}

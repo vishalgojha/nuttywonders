@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NuttyWonders — Wholesome snacks, thoughtfully made</title>
+  <meta name="description" content="Handmade granolas, bites and snack bars made with clean ingredients." />
+  <meta name="theme-color" content="#1d300f" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="/manifest-storefront.json" />
+  <link rel="icon" href="/assets/nuttywonders-icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="announcement">Made in small batches with clean, feel-good ingredients <span>✦</span> Free delivery above ₹799</div>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="NuttyWonders home"><img class="brand-logo" src="assets/nuttywonders-logo.png" alt="NuttyWonders" /></a>
+    <nav class="desktop-nav" aria-label="Main navigation"><a href="#shop">Shop</a><a href="#our-story">Our story</a><a href="#gift">Gifting</a><a href="#journal">Journal</a></nav>
+    <div class="header-actions"><button class="icon-btn search-toggle" aria-label="Search">⌕</button><button class="cart-btn" id="cart-open">Bag <span id="cart-count">0</span></button><button class="menu-toggle" id="menu-toggle" aria-label="Open menu">☰</button></div>
+  </header>
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow">The good kind of craving</p><h1>Small joys.<br><em>Big goodness.</em></h1><p class="hero-text">Wholesome snacks handcrafted with clean ingredients, honest flavours and a generous sprinkle of joy.</p><div class="hero-actions"><a class="button button-dark" href="#shop">Shop the pantry <span>↗</span></a><a class="text-link" href="#our-story">Meet NuttyWonders <span>→</span></a></div><div class="hero-proof"><div class="avatars"><span>✦</span><span>♥</span><span>●</span></div><p>Loved by mindful snackers<br><strong>4.9/5 from our community</strong></p></div></div>
+      <div class="hero-art"><div class="sun-disc"></div><div class="hero-note note-one">No refined<br>sugar</div><div class="hero-note note-two">Handmade<br>with care</div><img src="assets/brand-slice.webp" alt="NuttyWonders snack assortment" fetchpriority="high" /></div>
+    </section>
+    <section class="values"><div><span>01</span><strong>Clean ingredients</strong><small>Nothing unnecessary</small></div><div><span>02</span><strong>Made by hand</strong><small>Small-batch goodness</small></div><div><span>03</span><strong>Snack happy</strong><small>Everyday nourishment</small></div><div><span>04</span><strong>Thoughtful gifting</strong><small>Made to be shared</small></div></section>
+    <section class="shop-section" id="shop"><div class="section-heading"><div><p class="eyebrow">The pantry edit</p><h2>Good things to<br><em>keep close.</em></h2></div><p class="section-intro">From breakfast crunch to anytime bites, discover snacks that bring a little more goodness to your day.</p></div><div class="filter-row"><div class="filters" id="filters"><button class="filter active" data-filter="all">All snacks</button><button class="filter" data-filter="granola">Granola</button><button class="filter" data-filter="bites">Bites</button><button class="filter" data-filter="bars">Bars & treats</button></div><span class="product-count" id="product-count"></span></div><div class="product-grid" id="product-grid"></div></section>
+    <section class="story-section" id="our-story"><div class="story-image"><img src="assets/date-walnut-cake.webp" alt="NuttyWonders date and walnut bake" loading="lazy" /><span class="stamp">Made<br>with<br>heart</span></div><div class="story-copy"><p class="eyebrow">A little about us</p><h2>Good food starts<br>with a <em>good intention.</em></h2><p>NuttyWonders began with a simple belief: everyday snacking can be joyful, nourishing and full of flavour. So we make small batches with ingredients we can pronounce, recipes we love and plenty of care.</p><p>There is no refined sugar, no preservatives and no palm oil here. Just wholesome recipes made for real life — school bags, work desks, road trips and everything in between.</p><a class="text-link" href="#gift">Read our story <span>→</span></a></div></section>
+    <section class="feature-banner" id="gift"><div><p class="eyebrow">Made for sharing</p><h2>Send a little<br><em>goodness.</em></h2><p>Curated snack boxes for birthdays, client thank-yous, festivals and the “thinking of you” moments.</p><a class="button button-light" href="https://wa.me/918108398025" target="_blank" rel="noreferrer">Plan a hamper <span>↗</span></a></div><div class="banner-items"><div class="mini-card"><span>01</span><b>Build your<br>own box</b><i>↗</i></div><div class="mini-card offset"><span>02</span><b>Corporate<br>gifting</b><i>↗</i></div><div class="mini-card"><span>03</span><b>Festive<br>favourites</b><i>↗</i></div></div></section>
+    <section class="journal" id="journal"><div class="section-heading compact"><div><p class="eyebrow">From the journal</p><h2>Little rituals,<br><em>better snacking.</em></h2></div><a class="text-link" href="#shop">Explore all <span>→</span></a></div><div class="journal-grid"><article><div class="journal-img cocoa"></div><p class="eyebrow">Snack notes</p><h3>How to build a happier pantry</h3><a href="#shop">Read more →</a></article><article><div class="journal-img ragi"><img src="assets/ragi-brownie.webp" alt="Ragi brownie" loading="lazy" /></div><p class="eyebrow">Ingredient spotlight</p><h3>Meet the humble, mighty ragi</h3><a href="#shop">Read more →</a></article><article><div class="journal-img crunch"><img src="assets/crunchy-munchy.webp" alt="Crunchy Munchy snack" loading="lazy" /></div><p class="eyebrow">Good to know</p><h3>Why small batch tastes better</h3><a href="#shop">Read more →</a></article></div></section>
+  </main>
+  <footer><div class="footer-main"><div><a class="brand footer-brand" href="#top"><img class="brand-logo" src="assets/nuttywonders-logo.png" alt="NuttyWonders" /></a><p>Wholesome snacks for<br>everyday wonder.</p></div><div><h4>Explore</h4><a href="#shop">Shop all</a><a href="#our-story">Our story</a><a href="#gift">Gifting</a></div><div><h4>Say hello</h4><a href="https://wa.me/918108398025" target="_blank" rel="noreferrer">WhatsApp us</a><a href="mailto:Kavita@nuttywonders.com">Email us</a><a href="https://www.instagram.com/nuttywonders/" target="_blank" rel="noreferrer">Instagram</a></div><div class="newsletter"><h4>Goodness in your inbox</h4><p>New drops, snack notes and 10% off your first order.</p><form id="newsletter-form"><input type="email" placeholder="Your email address" aria-label="Email address" required><button aria-label="Subscribe">→</button></form><small id="newsletter-note"></small></div></div><div class="footer-bottom"><span>© 2026 NuttyWonders</span><span>No refined sugar · No preservatives · Palm oil free</span><span>Made in India</span></div></footer>
+  <div class="modal-backdrop" id="modal-backdrop"><div class="product-modal" role="dialog" aria-modal="true"><button class="modal-close" id="modal-close">×</button><div class="modal-visual" id="modal-visual"></div><div class="modal-copy"><p class="eyebrow" id="modal-category"></p><h2 id="modal-title"></h2><p id="modal-description"></p><div class="ingredients" id="modal-ingredients"></div><div class="modal-buy"><div><span class="price" id="modal-price"></span><small id="modal-pack">200 g pack</small></div><button class="button button-dark" id="modal-add">Add to bag <span>+</span></button></div></div></div></div>
+  <section class="track-section" id="track">
+    <div class="track-copy"><p class="eyebrow">Already ordered?</p><h2>Where is my<br><em>snack box?</em></h2><p>Enter the order code from your confirmation message along with the phone number you ordered with.</p></div>
+    <form class="track-form" id="order-lookup-form">
+      <label>Order code<input id="order-lookup-code" placeholder="NW-251001-0001" autocomplete="off" required></label>
+      <label>Phone number<input id="order-lookup-phone" type="tel" inputmode="numeric" placeholder="10-digit mobile number" required></label>
+      <button class="button button-dark" type="submit">Track my order <span>→</span></button>
+      <div class="lookup-result" id="order-lookup-result" hidden></div>
+    </form>
+  </section>
+  <aside class="cart-drawer" id="cart-drawer"><div class="cart-head"><div><p class="eyebrow">Your picks</p><h2>Your bag</h2></div><button id="cart-close" class="modal-close">×</button></div><div id="cart-items" class="cart-items"></div><div class="cart-foot"><div><span>Subtotal</span><strong id="cart-subtotal">₹0.00</strong></div><div><span>Delivery</span><strong id="cart-shipping">₹0.00</strong></div><div><span>Total</span><strong id="cart-total">₹0</strong></div><button class="button button-dark checkout" id="checkout">Checkout <span>↗</span></button><small>Free delivery on orders above ₹799 · Pay by UPI</small></div></aside>
+  <aside class="cart-drawer checkout-drawer" id="checkout-drawer"><div class="cart-head"><div><p class="eyebrow">Almost there</p><h2>Delivery details</h2></div><button id="checkout-close" class="modal-close">×</button></div>
+    <div id="checkout-form-panel">
+      <form id="checkout-form" class="checkout-form">
+        <div class="checkout-summary"><span>Total to pay</span><strong id="checkout-summary-total">₹0</strong><small id="checkout-summary-shipping"></small></div>
+        <label>Your name<input id="checkout-name" autocomplete="name" required placeholder="Kavita Sharma"></label>
+        <label>WhatsApp number<input id="checkout-phone" type="tel" inputmode="numeric" autocomplete="tel" required placeholder="81083 98025"></label>
+        <label>Email <span class="optional">optional</span><input id="checkout-email" type="email" autocomplete="email" placeholder="you@example.com"></label>
+        <label>Address<input id="checkout-address" autocomplete="address-line1" required placeholder="Flat, house number, building"></label>
+        <label>Area / street <span class="optional">optional</span><input id="checkout-address2" autocomplete="address-line2" placeholder="Colony or landmark area"></label>
+        <div class="two"><label>City<input id="checkout-city" autocomplete="address-level2" required placeholder="Bhopal"></label><label>Pincode<input id="checkout-pincode" inputmode="numeric" autocomplete="postal-code" required placeholder="462001"></label></div>
+        <label>Delivery note <span class="optional">optional</span><input id="checkout-note" placeholder="Leave with the watchman"></label>
+        <p class="checkout-feedback" id="checkout-feedback"></p>
+        <button class="button button-dark" type="submit" id="checkout-submit">Place order</button>
+      </form>
+    </div>
+    <div id="checkout-done-panel" hidden>
+      <div class="order-done">
+        <p class="eyebrow">Order confirmed</p>
+        <h3><span id="order-code"></span></h3>
+        <p id="order-pay-status">We have sent the details to your WhatsApp. Please pay by UPI and share the screenshot so we can start packing.</p>
+        <div class="order-vpa" id="order-vpa" hidden><small>Pay to this UPI id</small><strong id="order-vpa-value"></strong><small id="order-payee"></small><small id="order-instructions"></small></div>
+        <div class="order-lines" id="order-items"></div>
+        <div class="order-total"><span>Total · delivery <span id="order-shipping"></span></span><strong id="order-total"></strong></div>
+        <div class="order-done-actions"><a class="button button-dark" id="order-wa-link" href="#" target="_blank" rel="noreferrer">Pay on WhatsApp <span>↗</span></a><a class="text-link" id="order-track-link" href="#track">Track this order <span>→</span></a></div>
+      </div>
+    </div>
+  </aside><div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

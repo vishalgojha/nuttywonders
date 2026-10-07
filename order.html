@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track your order — NuttyWonders</title>
+  <meta name="description" content="Check the status of your NuttyWonders order." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="announcement">Made in small batches with clean, feel-good ingredients <span>✦</span> Free delivery above ₹799</div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="NuttyWonders home"><img class="brand-logo" src="assets/nuttywonders-logo.png" alt="NuttyWonders" /></a>
+    <nav class="desktop-nav" aria-label="Main navigation"><a href="/#shop">Shop</a><a href="/#our-story">Our story</a><a href="/#gift">Gifting</a></nav>
+    <div class="header-actions"><a class="cart-btn" href="/#shop">Shop <span>→</span></a></div>
+  </header>
+
+  <main>
+    <section class="track-section" id="track">
+      <div class="track-copy">
+        <p class="eyebrow">Your order</p>
+        <h2>Where is my<br><em>snack box?</em></h2>
+        <p>Enter the order code from your confirmation message along with the phone number you ordered with. We also texted you the code on WhatsApp.</p>
+      </div>
+      <form class="track-form" id="order-lookup-form">
+        <label>Order code<input id="order-lookup-code" placeholder="NW-251001-0001" autocomplete="off" required></label>
+        <label>Phone number<input id="order-lookup-phone" type="tel" inputmode="numeric" placeholder="10-digit mobile number" required></label>
+        <button class="button button-dark" type="submit">Track my order <span>→</span></button>
+        <div class="lookup-result" id="order-lookup-result" hidden></div>
+      </form>
+    </section>
+  </main>
+
+  <footer><div class="footer-bottom"><span>© 2026 NuttyWonders</span><a href="https://wa.me/918108398025">WhatsApp us</a><a href="mailto:Kavita@nuttywonders.com">Kavita@nuttywonders.com</a></div></footer>
+  <script src="order.js"></script>
+</body>
+</html>

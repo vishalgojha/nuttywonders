@@ -1,0 +1,15 @@
+{
+  "name": "NuttyWonders Studio",
+  "short_name": "NW Studio",
+  "description": "Manage NuttyWonders products, costs and inventory.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff8df",
+  "theme_color": "#1d300f",
+  "orientation": "any",
+  "icons": [
+    { "src": "/assets/nuttywonders-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/assets/nuttywonders-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,11 @@
+.git
+.agents
+.codex
+outputs
+work
+*.xlsx
+*.pdf
+README.md
+apps/bridge/vendor
+tests/db/node_modules
+.git

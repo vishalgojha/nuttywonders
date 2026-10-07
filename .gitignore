@@ -1,0 +1,36 @@
+# --- secrets: never commit these -----------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# whatsapp session database and device keys
+*.db
+*.db-shm
+*.db-wal
+/data/
+
+# build output
+/dist
+/build
+apps/bridge/bridge
+
+# node
+node_modules/
+npm-debug.log*
+
+# supabase CLI
+.branches
+.temp
+supabase/.branches
+supabase/.temp
+supabase/.env
+
+# editors and os noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+*.log

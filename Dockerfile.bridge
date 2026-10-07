@@ -1,0 +1,26 @@
+# syntax=docker/dockerfile:1
+
+# The bridge needs cgo because the WhatsApp session store uses SQLite.
+FROM golang:1.26-alpine AS build
+RUN apk add --no-cache build-base git
+WORKDIR /src
+COPY apps/bridge/go.mod apps/bridge/go.sum ./
+RUN go mod download
+COPY apps/bridge/ ./
+ARG VERSION=dev
+RUN CGO_ENABLED=1 GOOS=linux go build -trimpath \
+      -ldflags "-s -w -X main.version=${VERSION}" \
+      -o /out/bridge .
+
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 bridge
+WORKDIR /app
+COPY --from=build /out/bridge /app/bridge
+RUN mkdir -p /data && chown -R bridge:bridge /data /app
+USER bridge
+ENV BRIDGE_ADDR=:8081 \
+    WHATSAPP_DB=file:/data/whatsmeow.db?_foreign_keys=on \
+    WHATSAPP_DB_DIALECT=sqlite3
+EXPOSE 8081
+VOLUME ["/data"]
+ENTRYPOINT ["/app/bridge"]
