@@ -36,6 +36,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/orders/verify", s.limit.limit("payment", 20, time.Minute, s.handleVerifyPayment))
 	mux.HandleFunc("GET /api/orders/track", s.handleTrackOrder)
 	mux.HandleFunc("POST /api/webhooks/razorpay", s.handleRazorpayWebhook)
+	mux.HandleFunc("GET /api/webhooks/razorpay", s.handleRazorpayWebhookInfo)
 	mux.HandleFunc("POST /api/admin/session", s.limit.limit("signin", 8, time.Minute, s.handleSignIn))
 	mux.HandleFunc("POST /api/admin/session/refresh", s.handleRefreshSession)
 	mux.HandleFunc("POST /api/admin/session/sign-out", s.handleSignOut)

@@ -180,6 +180,15 @@ func (s *Server) handleVerifyPayment(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleRazorpayWebhookInfo answers browsers that stumble onto the webhook
+// URL. Razorpay only ever POSTs here, so a GET is just a reachability check.
+// Returning 200 instead of Go's bare 405 keeps the endpoint from looking
+// broken when someone clicks it.
+func (s *Server) handleRazorpayWebhookInfo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	io.WriteString(w, "NuttyWonders Razorpay webhook endpoint. It accepts POST requests from Razorpay for payment.captured and order.paid events. A GET only proves this URL is reachable.")
+}
+
 // handleRazorpayWebhook receives Razorpay's server-side payment events. Only
 // the raw body handed to us plus Razorpay's signature can authenticate these,
 // so the handler reads the body itself instead of decodeJSON.
