@@ -559,6 +559,22 @@ async function pollWhatsApp() {
   }
 }
 
+// --- section views -----------------------------------------------------------
+// The sidebar switches between full views instead of scrolling one long page.
+const SECTIONS = ['overview', 'orders', 'products', 'messages', 'broadcast', 'whatsapp', 'settings'];
+
+function showSection(id) {
+  SECTIONS.forEach((name) => {
+    const el = document.getElementById(name);
+    if (el) el.hidden = name !== id;
+  });
+  document.querySelectorAll('.sidebar nav a').forEach((a) => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+  });
+  history.replaceState(null, '', '#' + id);
+  window.scrollTo(0, 0);
+}
+
 // --- wiring ----------------------------------------------------------------
 
 function wire() {
@@ -616,10 +632,12 @@ function wire() {
     }
   });
 
-  document.querySelectorAll('.sidebar nav a').forEach((link) => link.addEventListener('click', () => {
-    document.querySelectorAll('.sidebar nav a').forEach((other) => other.classList.remove('active'));
-    link.classList.add('active');
+  document.querySelectorAll('.sidebar nav a').forEach((link) => link.addEventListener('click', (event) => {
+    event.preventDefault();
+    showSection(link.getAttribute('href').slice(1));
   }));
+  const initial = (location.hash || '#overview').slice(1);
+  showSection(SECTIONS.includes(initial) ? initial : 'overview');
 }
 
 async function init() {
