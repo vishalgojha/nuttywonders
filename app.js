@@ -248,6 +248,10 @@ function showOrderPlaced(result, paid) {
   const order = result.order;
   const payment = result.payment || {};
 
+  const drawer = $('#checkout-drawer');
+  drawer.hidden = false;
+  drawer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
   $('#checkout-form-panel').hidden = true;
   $('#checkout-done-panel').hidden = false;
 
