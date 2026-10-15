@@ -129,7 +129,9 @@ function cartTotals() {
 
   const freeOver = Number(state.settings.free_shipping_over_inr || 799);
   const fee = Number(state.settings.delivery_fee_inr || 60);
-  const shipping = subtotal >= freeOver ? 0 : fee;
+  const safeFreeOver = isNaN(freeOver) ? 799 : freeOver;
+  const safeFee = isNaN(fee) ? 60 : fee;
+  const shipping = subtotal >= safeFreeOver ? 0 : safeFee;
 
   return { subtotal, shipping, total: subtotal + shipping };
 }
@@ -207,7 +209,7 @@ async function submitCheckout(event) {
       address_line2: $('#checkout-address2').value.trim(),
       city: $('#checkout-city').value.trim(),
       pincode: $('#checkout-pincode').value.trim(),
-      landmark: $('#checkout-landmark').value.trim(),
+      landmark: $('#checkout-landmark') ? $('#checkout-landmark').value.trim() : '',
     },
     note: $('#checkout-note').value.trim(),
     items: cartPayload(),
@@ -480,6 +482,32 @@ function paymentLabel(status) {
   }[status] || status;
 }
 
+function decodeSetting(val) {
+  if (val === null || val === undefined) return val;
+  if (typeof val === 'number') return val;
+  if (typeof val !== 'string') return val;
+  // try numeric parse
+  const num = Number(val);
+  if (!isNaN(num)) return num;
+  // try base64 decode, common for settings coming as base64
+  try {
+    const decoded = atob(val);
+    const decodedNum = Number(decoded);
+    if (!isNaN(decodedNum)) return decodedNum;
+    // if decoded looks like a number string
+    return decoded;
+  } catch {}
+  return val;
+}
+
+function normalizeSettings(raw = {}) {
+  const out = {};
+  for (const k in raw) {
+    out[k] = decodeSetting(raw[k]);
+  }
+  return out;
+}
+
 async function init() {
   wireEvents();
   saveCart();
@@ -487,7 +515,7 @@ async function init() {
   try {
     const [products, settings] = await Promise.all([api('/products'), api('/settings')]);
     state.products = products.products || [];
-    state.settings = settings.settings || {};
+    state.settings = normalizeSettings(settings.settings || {});
   } catch (error) {
     $('#product-grid').innerHTML = `<p class="cart-empty">We could not load the pantry just now. Please refresh in a moment.</p>`;
     return;
@@ -500,3 +528,61 @@ async function init() {
 
 init();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
+
+// PWA install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = $('#pwa-install');
+  if (btn) btn.hidden = false;
+});
+
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'pwa-install') {
+    const btn = e.target;
+    btn.disabled = true;
+    btn.textContent = 'Installing…';
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(() => {
+      deferredPrompt = null;
+      btn.hidden = true;
+    });
+  }
+});
+
+// Close drawers on outside tap for mobile
+document.addEventListener('touchstart', () => {
+  // noop to keep pointer events responsive
+});
+// Improve mobile menu
+const menuBtn = $('#menu-toggle');
+const desktopNav = $('.desktop-nav');
+if (menuBtn && desktopNav) {
+  let navOpen = false;
+  menuBtn.addEventListener('click', () => {
+    navOpen = !navOpen;
+    desktopNav.classList.toggle('open', navOpen);
+    menuBtn.setAttribute('aria-expanded', navOpen);
+    if (navOpen) {
+      desktopNav.style.position = 'absolute';
+      desktopNav.style.top = '78px';
+      desktopNav.style.left = '0';
+      desktopNav.style.right = '0';
+      desktopNav.style.padding = '20px 5vw';
+      desktopNav.style.background = 'var(--cream)';
+      desktopNav.style.flexDirection = 'column';
+      desktopNav.style.display = 'flex';
+    } else {
+      desktopNav.style.display = '';
+    }
+  });
+  // close on outside tap
+  document.addEventListener('click', (e) => {
+    if (!navOpen) return;
+    if (e.target.closest('.site-header')) return;
+    navOpen = false;
+    desktopNav.classList.remove('open');
+    desktopNav.style.display = '';
+  });
+}
