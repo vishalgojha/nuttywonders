@@ -22,7 +22,7 @@ const statusCopy = {
 };
 
 const paymentCopy = {
-  pending: 'Awaiting your UPI payment',
+  pending: 'Awaiting your online payment',
   paid: 'Payment received, thank you',
   cod: 'Cash on delivery',
   failed: 'Payment failed, please retry',

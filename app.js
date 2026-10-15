@@ -260,7 +260,7 @@ function showOrderPlaced(result, paid) {
   $('#order-track-link').href = payment.track_url || `/order.html?code=${order.code}`;
 
   const showManual = (message) => {
-    statusLine.textContent = message || 'We have sent the details to your WhatsApp. Please pay by UPI and share the screenshot so we can start packing.';
+    statusLine.textContent = message || 'We have sent the details to your WhatsApp. Please complete the online payment so we can start packing.';
     waLink.hidden = false;
     waLink.href = `https://wa.me/${order.phone_e164.replace('+', '')}`;
   };
@@ -307,7 +307,7 @@ function loadRazorpaySdk() {
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Could not load the payment gateway. Please pay by UPI on WhatsApp instead.'));
+    script.onerror = () => reject(new Error('Could not load the payment gateway. Please check your connection and retry, or contact us on WhatsApp.'));
     document.head.appendChild(script);
   });
 }
@@ -336,7 +336,7 @@ async function openRazorpay(result, rz, showManual, showPaid) {
       modal: { ondismiss() { showManual(); } },
     });
     rzp.on('payment.failed', () => {
-      showManual('Payment was not completed. Your order is safe — you can pay below or on WhatsApp.');
+      showManual('Payment was not completed. Your order is safe — please retry the payment or reach us on WhatsApp.');
     });
   } catch (error) {
     showManual(error.message);
@@ -357,7 +357,7 @@ async function verifyPayment(result, response, showManual, showPaid) {
     });
     showPaid();
   } catch (error) {
-    showManual('Payment could not be confirmed yet: ' + error.message + ' Your order is safe — share the UPI screenshot on WhatsApp if you paid.');
+    showManual('Payment could not be confirmed yet: ' + error.message + ' Your order is safe — contact us on WhatsApp with your payment reference if you paid.');
   }
 }
 
@@ -468,7 +468,7 @@ function statusLabel(status) {
 
 function paymentLabel(status) {
   return {
-    pending: 'awaiting your UPI payment',
+    pending: 'awaiting your online payment',
     paid: 'received, thank you',
     cod: 'cash on delivery',
     failed: 'failed, please retry',
