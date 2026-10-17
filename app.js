@@ -141,6 +141,7 @@ function renderCart() {
 
   if (!state.cart.length) {
     area.innerHTML = `<p class="cart-empty">Your bag is waiting for something delicious.<br><br>Explore the pantry and add your favourites here.</p>`;
+    $('#cart-subtotal').textContent = '₹0.00';
     $('#cart-total').textContent = '₹0';
     $('#cart-shipping').textContent = '₹0.00';
     return;
