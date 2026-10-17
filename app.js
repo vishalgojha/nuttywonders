@@ -308,37 +308,47 @@ function loadRazorpaySdk() {
   });
 }
 
-async function openRazorpay(result, rz, showPaymentUnavailable, showPaid) {
+function openRazorpay(result, rz, showPaymentUnavailable, showPaid) {
   const order = result.order;
-  let rzp;
-  try {
-    await loadRazorpaySdk();
-    rzp = new window.Razorpay({
-      key: rz.key_id,
-      amount: rz.amount_paise,
-      currency: rz.currency || 'INR',
-      name: 'NuttyWonders',
-      description: 'Order ' + order.code,
-      order_id: rz.order_id,
-      prefill: {
-        name: order.customer_name || '',
-        contact: order.phone_e164 || '',
-        email: $('#checkout-email').value.trim(),
-      },
-      theme: { color: '#d7824b' },
-      handler(response) {
-        verifyPayment(result, response, showPaymentUnavailable, showPaid);
-      },
-      modal: { ondismiss() { showPaymentUnavailable(); } },
-    });
-    rzp.on('payment.failed', () => {
-      showPaymentUnavailable('Payment was not completed. Please retry the secure Razorpay payment.', () => openRazorpay(result, rz, showPaymentUnavailable, showPaid));
-    });
-  } catch (error) {
-    showPaymentUnavailable(error.message, () => openRazorpay(result, rz, showPaymentUnavailable, showPaid));
+  const retry = () => openRazorpay(result, rz, showPaymentUnavailable, showPaid);
+  const launch = () => {
+    try {
+      const rzp = new window.Razorpay({
+        key: rz.key_id,
+        amount: rz.amount_paise,
+        currency: rz.currency || 'INR',
+        name: 'NuttyWonders',
+        description: 'Order ' + order.code,
+        order_id: rz.order_id,
+        prefill: {
+          name: order.customer_name || '',
+          contact: order.phone_e164 || '',
+          email: $('#checkout-email').value.trim(),
+        },
+        retry: { enabled: true },
+        theme: { color: '#d7824b' },
+        handler(response) {
+          verifyPayment(result, response, showPaymentUnavailable, showPaid);
+        },
+        modal: { ondismiss() { showPaymentUnavailable(undefined, retry); } },
+      });
+      rzp.on('payment.failed', () => {
+        showPaymentUnavailable('Payment was not completed. Please retry the secure Razorpay payment.', retry);
+      });
+      rzp.open();
+    } catch (error) {
+      showPaymentUnavailable(error.message, retry);
+    }
+  };
+
+  // A retry happens after the Checkout SDK is already loaded. Open it
+  // synchronously from the click handler to preserve the browser's user
+  // activation; awaiting even an already-resolved Promise can block the modal.
+  if (window.Razorpay) {
+    launch();
     return;
   }
-  rzp.open();
+  loadRazorpaySdk().then(launch).catch((error) => showPaymentUnavailable(error.message, retry));
 }
 
 async function verifyPayment(result, response, showPaymentUnavailable, showPaid) {
