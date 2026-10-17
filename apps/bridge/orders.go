@@ -102,22 +102,21 @@ func (s *Server) handleCheckout(w http.ResponseWriter, r *http.Request) {
 
 	s.log.Info("order placed", "code", result.Order.Code, "channel", channel)
 
-	payment := map[string]any{
-		"vpa":          s.setting(ctx, "upi_vpa", ""),
-		"payee_name":   s.setting(ctx, "upi_payee_name", "NuttyWonders"),
-		"instructions": s.setting(ctx, "payment_instructions", "Pay by UPI and share the screenshot on WhatsApp."),
-		"track_url":    s.setting(ctx, "app_base_url", s.cfg.PublicBaseURL) + "/order?code=" + result.Order.Code,
+	rzOrderID, amountPaise, err := s.attachRazorpayOrder(ctx, &result.Order)
+	if err != nil {
+		s.log.Warn("checkout could not prepare razorpay payment", "code", result.Order.Code, "error", err)
+		writeError(w, http.StatusServiceUnavailable, "online payment is temporarily unavailable; please try again")
+		return
 	}
-	if rzOrderID, amountPaise, ok := s.attachRazorpayOrder(ctx, &result.Order); ok {
-		payment["method"] = "razorpay"
-		payment["razorpay"] = map[string]any{
+	payment := map[string]any{
+		"method":    "razorpay",
+		"track_url": s.setting(ctx, "app_base_url", s.cfg.PublicBaseURL) + "/order?code=" + result.Order.Code,
+		"razorpay": map[string]any{
 			"key_id":       s.cfg.RazorpayKeyID,
 			"order_id":     rzOrderID,
 			"amount_paise": amountPaise,
 			"currency":     "INR",
-		}
-	} else {
-		payment["method"] = "upi"
+		},
 	}
 
 	writeJSON(w, http.StatusCreated, map[string]any{

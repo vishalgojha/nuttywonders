@@ -66,11 +66,10 @@
       <div class="order-done">
         <p class="eyebrow">Order confirmed</p>
         <h3><span id="order-code"></span></h3>
-        <p id="order-pay-status">We have sent the details to your WhatsApp. Please complete the online payment so we can start packing.</p>
-        <div class="order-vpa" id="order-vpa" hidden><small>Pay to this UPI id</small><strong id="order-vpa-value"></strong><small id="order-payee"></small><small id="order-instructions"></small></div>
+        <p id="order-pay-status">Please complete the secure payment in the Razorpay window so we can start packing.</p>
         <div class="order-lines" id="order-items"></div>
         <div class="order-total"><span>Total · delivery <span id="order-shipping"></span></span><strong id="order-total"></strong></div>
-        <div class="order-done-actions"><a class="button button-dark" id="order-wa-link" href="#" target="_blank" rel="noreferrer">Pay on WhatsApp <span>↗</span></a><a class="text-link" id="order-track-link" href="#track">Track this order <span>→</span></a></div>
+        <div class="order-done-actions"><button class="button button-dark" id="order-payment-retry" type="button" hidden>Retry payment <span>↗</span></button><a class="text-link" id="order-track-link" href="#track">Track this order <span>→</span></a></div>
       </div>
     </div>
   </aside><div class="toast" id="toast"></div>

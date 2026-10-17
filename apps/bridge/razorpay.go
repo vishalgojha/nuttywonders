@@ -323,22 +323,21 @@ func (s *Server) queuePaymentReceived(ctx context.Context, order *Order) {
 	}, nil)
 }
 
-// attachRazorpayOrder creates a gateway order for the placed order and, on
-// success, records it on the row. It never fails the checkout: a gateway blip
-// falls back to the manual UPI instructions. The paise amount is derived from
-// the server-side total, never from the browser.
-func (s *Server) attachRazorpayOrder(ctx context.Context, order *Order) (rzOrderID string, amountPaise int64, ok bool) {
+// attachRazorpayOrder creates a gateway order for the placed order and records
+// it on the row. Web checkout is Razorpay-only; there is no WhatsApp/UPI
+// fallback because that would leave customers with an order they cannot pay
+// through the checkout they just used. The paise amount is derived from the
+// server-side total, never from the browser.
+func (s *Server) attachRazorpayOrder(ctx context.Context, order *Order) (rzOrderID string, amountPaise int64, err error) {
 	rz := s.razorpay()
 	if !rz.configured() {
-		return "", 0, false
+		return "", 0, errors.New("razorpay is not configured")
 	}
 
 	amountPaise = int64(math.Round(order.TotalINR * 100))
 	rzOrderID, err := rz.createOrder(ctx, amountPaise, order.Code)
 	if err != nil {
-		s.log.Warn("razorpay order creation failed, falling back to manual payment",
-			"code", order.Code, "error", err)
-		return "", 0, false
+		return "", 0, err
 	}
 
 	query := url.Values{}
@@ -347,5 +346,5 @@ func (s *Server) attachRazorpayOrder(ctx context.Context, order *Order) (rzOrder
 		"payment_gateway": "razorpay",
 		"payment_ref":     rzOrderID,
 	}, nil)
-	return rzOrderID, amountPaise, true
+	return rzOrderID, amountPaise, nil
 }

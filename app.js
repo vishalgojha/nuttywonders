@@ -262,29 +262,18 @@ function showOrderPlaced(result, paid) {
   $('#order-shipping').textContent = Number(order.shipping_inr) === 0 ? 'Free' : money(order.shipping_inr);
 
   const statusLine = $('#order-pay-status');
-  const waLink = $('#order-wa-link');
+  const paymentRetry = $('#order-payment-retry');
   $('#order-track-link').href = payment.track_url || `/order.html?code=${order.code}`;
 
-  const showManual = (message) => {
-    statusLine.textContent = message || 'We have sent the details to your WhatsApp. Please complete the online payment so we can start packing.';
-    waLink.hidden = false;
-    waLink.href = `https://wa.me/${order.phone_e164.replace('+', '')}`;
+  const showPaymentUnavailable = (message, retry) => {
+    statusLine.textContent = message || 'Payment was not completed. Please retry the secure Razorpay payment.';
+    paymentRetry.hidden = !retry;
+    paymentRetry.onclick = retry || null;
   };
 
   const showPaid = () => {
-    statusLine.textContent = 'Payment received — we are packing your order. Watch your WhatsApp for updates.';
-    waLink.hidden = true;
-    $('#order-vpa').hidden = true;
-  };
-
-  const vpaBox = $('#order-vpa');
-  if (payment.vpa) {
-    vpaBox.hidden = false;
-    $('#order-vpa-value').textContent = payment.vpa;
-    $('#order-payee').textContent = payment.payee_name || 'NuttyWonders';
-    $('#order-instructions').textContent = payment.instructions || '';
-  } else {
-    vpaBox.hidden = true;
+    statusLine.textContent = 'Payment received — we are packing your order.';
+    paymentRetry.hidden = true;
   }
 
   $('#order-items').innerHTML = (result.items || []).map((item) => `
@@ -299,11 +288,11 @@ function showOrderPlaced(result, paid) {
   }
   if (payment.method === 'razorpay' && payment.razorpay) {
     statusLine.textContent = 'Almost there — please complete the payment in the popup that is now opening.';
-    waLink.hidden = true;
-    openRazorpay(result, payment.razorpay, showManual, showPaid);
+    paymentRetry.hidden = true;
+    openRazorpay(result, payment.razorpay, showPaymentUnavailable, showPaid);
     return;
   }
-  showManual();
+  showPaymentUnavailable('Online payment is temporarily unavailable. Please try placing your order again.', false);
 }
 
 function loadRazorpaySdk() {
@@ -313,12 +302,12 @@ function loadRazorpaySdk() {
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Could not load the payment gateway. Please check your connection and retry, or contact us on WhatsApp.'));
+    script.onerror = () => reject(new Error('Could not load Razorpay Checkout. Please check your connection and retry.'));
     document.head.appendChild(script);
   });
 }
 
-async function openRazorpay(result, rz, showManual, showPaid) {
+async function openRazorpay(result, rz, showPaymentUnavailable, showPaid) {
   const order = result.order;
   let rzp;
   try {
@@ -337,21 +326,21 @@ async function openRazorpay(result, rz, showManual, showPaid) {
       },
       theme: { color: '#d7824b' },
       handler(response) {
-        verifyPayment(result, response, showManual, showPaid);
+        verifyPayment(result, response, showPaymentUnavailable, showPaid);
       },
-      modal: { ondismiss() { showManual(); } },
+      modal: { ondismiss() { showPaymentUnavailable(); } },
     });
     rzp.on('payment.failed', () => {
-      showManual('Payment was not completed. Your order is safe — please retry the payment or reach us on WhatsApp.');
+      showPaymentUnavailable('Payment was not completed. Please retry the secure Razorpay payment.', () => openRazorpay(result, rz, showPaymentUnavailable, showPaid));
     });
   } catch (error) {
-    showManual(error.message);
+    showPaymentUnavailable(error.message, () => openRazorpay(result, rz, showPaymentUnavailable, showPaid));
     return;
   }
   rzp.open();
 }
 
-async function verifyPayment(result, response, showManual, showPaid) {
+async function verifyPayment(result, response, showPaymentUnavailable, showPaid) {
   try {
     await api('/orders/verify', {
       method: 'POST',
@@ -363,7 +352,7 @@ async function verifyPayment(result, response, showManual, showPaid) {
     });
     showPaid();
   } catch (error) {
-    showManual('Payment could not be confirmed yet: ' + error.message + ' Your order is safe — contact us on WhatsApp with your payment reference if you paid.');
+    showPaymentUnavailable('Payment could not be confirmed yet: ' + error.message + ' Please retry the Razorpay payment.', () => openRazorpay(result, result.payment?.razorpay, showPaymentUnavailable, showPaid));
   }
 }
 

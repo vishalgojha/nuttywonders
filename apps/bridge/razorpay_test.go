@@ -190,7 +190,7 @@ func TestCheckoutReturnsRazorpayPaymentNeverLeakingTheSecret(t *testing.T) {
 	}
 }
 
-func TestCheckoutFallsBackToUPIWhenGatewayFails(t *testing.T) {
+func TestCheckoutRejectsWhenGatewayFails(t *testing.T) {
 	gateway := fakeRazorpay(t, "", true)
 	oldBase := razorpayAPIBase
 	razorpayAPIBase = gateway.URL
@@ -207,15 +207,8 @@ func TestCheckoutFallsBackToUPIWhenGatewayFails(t *testing.T) {
 		"phone": "8108398025",
 		"items": []map[string]any{{"product_id": 1, "quantity": 1}},
 	})
-	if status != http.StatusCreated {
-		t.Fatalf("a gateway blip must not kill checkout, status = %d", status)
-	}
-	payment, _ := payload["payment"].(map[string]any)
-	if payment["method"] != "upi" {
-		t.Fatalf("expected manual UPI fallback, got %v", payment["method"])
-	}
-	if _, ok := payment["razorpay"]; ok {
-		t.Error("no razorpay payload should be sent when the gateway failed")
+	if status != http.StatusServiceUnavailable {
+		t.Fatalf("a gateway failure must stop checkout, status = %d payload = %v", status, payload)
 	}
 }
 
