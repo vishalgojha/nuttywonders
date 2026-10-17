@@ -335,7 +335,7 @@ func (s *Server) attachRazorpayOrder(ctx context.Context, order *Order) (rzOrder
 	}
 
 	amountPaise = int64(math.Round(order.TotalINR * 100))
-	rzOrderID, err := rz.createOrder(ctx, amountPaise, order.Code)
+	rzOrderID, err = rz.createOrder(ctx, amountPaise, order.Code)
 	if err != nil {
 		return "", 0, err
 	}
