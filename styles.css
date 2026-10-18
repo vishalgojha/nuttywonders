@@ -50,6 +50,13 @@
 .cart-line>.product-image{width:65px;height:72px;flex:none}
 @media(max-width:900px){.track-section{grid-template-columns:1fr;gap:40px;padding-left:6vw;padding-right:6vw}}
 @media(max-width:650px){.track-section{padding:65px 5vw}}
+/* Keep the checkout drawer within the mobile visual viewport and let its
+   form own touch scrolling (browser chrome and safe areas vary by device). */
+@media(max-width:650px){
+  .cart-drawer{height:100vh;height:100dvh;top:0;bottom:auto;padding-bottom:calc(22px + env(safe-area-inset-bottom))}
+  .cart-drawer>.cart-head{flex:none}
+  #checkout-form-panel,#checkout-done-panel{flex:1 1 0%;min-height:0;max-height:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;touch-action:pan-y}
+}
 .track-steps{display:flex;gap:0;margin:22px 0;border-top:1px solid var(--line);padding-top:16px}
 .track-step{flex:1;display:flex;flex-direction:column;gap:7px;position:relative}
 .track-step span{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--line);background:#fff}
