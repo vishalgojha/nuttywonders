@@ -765,8 +765,11 @@ function renderWhatsApp() {
     : 'Scan the QR code from WhatsApp → Linked devices to link this shop.');
 
   const pairButton = $('#pair-code');
-  pairButton.disabled = connected || Boolean(wa.qr_code);
-  pairButton.textContent = wa.qr_code ? 'Scan QR above' : 'Use phone pairing code';
+  // The QR and phone-code flows are alternatives, not mutually exclusive.
+  // WhatsMeow needs the first QR event to be ready for PairPhone, so keep
+  // this action available while the QR is visible.
+  pairButton.disabled = connected || wa.status !== 'pairing';
+  pairButton.textContent = 'Use phone pairing code';
 
   const qrBox = $('#qr-box');
   if (wa.qr_code && !connected) {
