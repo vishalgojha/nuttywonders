@@ -28,7 +28,7 @@ type Config struct {
 func loadConfig() (Config, error) {
 	c := Config{
 		Addr:                  env("BRIDGE_ADDR", ":8081"),
-		PublicBaseURL:         strings.TrimRight(env("PUBLIC_BASE_URL", "http://localhost:8081"), "/"),
+		PublicBaseURL:         strings.TrimRight(env("PUBLIC_BASE_URL", "https://app.nuttywonders.com"), "/"),
 		SupabaseURL:           strings.TrimRight(os.Getenv("SUPABASE_URL"), "/"),
 		SupabaseKey:           os.Getenv("SUPABASE_SERVICE_KEY"),
 		WhatsAppDB:            env("WHATSAPP_DB", "file:/data/whatsmeow.db?_foreign_keys=on"),
