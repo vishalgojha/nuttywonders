@@ -62,7 +62,7 @@ function renderProducts() {
   $('#product-count').textContent = `${list.length} snack${list.length === 1 ? '' : 's'}`;
   $('#product-grid').innerHTML = list.map((product) => `
     <article class="product-card" data-id="${product.id}">
-      ${visualFor(product)}
+      <div class="product-visual-wrap">${visualFor(product)}<button class="quick-add" type="button" aria-label="Add ${escapeHtml(product.name)} to bag">+</button></div>
       <div class="product-info">
         <div>
           <h3>${escapeHtml(product.name)}</h3>
@@ -74,6 +74,10 @@ function renderProducts() {
 
   $$('.product-card').forEach((card) => card.addEventListener('click', () => {
     openModal(productById(card.dataset.id));
+  }));
+  $$('.quick-add').forEach((button) => button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    addToCart(productById(button.closest('.product-card').dataset.id));
   }));
 }
 
@@ -144,6 +148,7 @@ function renderCart() {
     $('#cart-subtotal').textContent = '₹0.00';
     $('#cart-total').textContent = '₹0';
     $('#cart-shipping').textContent = '₹0.00';
+    updateShippingProgress(0);
     return;
   }
 
@@ -171,6 +176,7 @@ function renderCart() {
   $('#cart-total').textContent = money(totals.total);
   $('#cart-shipping').textContent = totals.shipping === 0 ? 'Free' : money(totals.shipping);
   $('#cart-subtotal').textContent = money(totals.subtotal);
+  updateShippingProgress(totals.subtotal);
 
   $$('.qty-btn,.remove', area).forEach((button) => button.addEventListener('click', () => {
     const line = state.cart.find((item) => String(item.id) === String(button.dataset.id));
@@ -183,6 +189,19 @@ function renderCart() {
     saveCart();
     renderCart();
   }));
+}
+
+function updateShippingProgress(subtotal) {
+  const note = $('#shipping-progress-note');
+  const bar = $('#shipping-progress-bar');
+  if (!note || !bar) return;
+  const threshold = Number(state.settings.free_shipping_over_inr || 799);
+  const safeThreshold = Number.isFinite(threshold) && threshold > 0 ? threshold : 799;
+  const progress = Math.min(100, Math.round((Number(subtotal || 0) / safeThreshold) * 100));
+  bar.style.width = `${progress}%`;
+  note.textContent = subtotal >= safeThreshold
+    ? 'You unlocked free delivery ✦'
+    : `Add ${money(safeThreshold - Number(subtotal || 0))} more for free delivery`;
 }
 
 function toast(message) {

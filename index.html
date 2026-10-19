@@ -22,7 +22,7 @@
   <header class="site-header">
     <a class="brand" href="#top" aria-label="NuttyWonders home"><img class="brand-logo" src="assets/nuttywonders-logo.png" alt="NuttyWonders" /></a>
     <nav class="desktop-nav" aria-label="Main navigation"><a href="#shop">Shop</a><a href="#our-story">Our story</a><a href="#gift">Gifting</a><a href="#journal">Journal</a></nav>
-    <div class="header-actions"><button class="icon-btn search-toggle" aria-label="Search">⌕</button><button class="cart-btn" id="cart-open">Bag <span id="cart-count">0</span></button><button class="menu-toggle" id="menu-toggle" aria-label="Open menu">☰</button></div>
+    <div class="header-actions"><button class="icon-btn search-toggle" aria-label="Search">⌕</button><button class="cart-btn" id="cart-open" aria-label="Open shopping bag"><svg class="bag-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 8.5h11l1 12h-13l1-12Z"/><path d="M9 9V6.5a3 3 0 0 1 6 0V9"/></svg><span class="cart-label">Bag</span><span id="cart-count">0</span></button><button class="menu-toggle" id="menu-toggle" aria-label="Open menu">☰</button></div>
   </header>
   <main id="top">
     <section class="hero">
@@ -46,7 +46,7 @@
       <div class="lookup-result" id="order-lookup-result" hidden></div>
     </form>
   </section>
-  <aside class="cart-drawer" id="cart-drawer"><div class="cart-head"><div><p class="eyebrow">Your picks</p><h2>Your bag</h2></div><button id="cart-close" class="modal-close">×</button></div><div id="cart-items" class="cart-items"></div><div class="cart-foot"><div><span>Subtotal</span><strong id="cart-subtotal">₹0.00</strong></div><div><span>Delivery</span><strong id="cart-shipping">₹0.00</strong></div><div><span>Total</span><strong id="cart-total">₹0</strong></div><button class="button button-dark checkout" id="checkout">Checkout <span>↗</span></button><small>Free delivery on orders above ₹799 · Secure online payment</small></div></aside>
+  <aside class="cart-drawer" id="cart-drawer"><div class="cart-head"><div><p class="eyebrow">Your picks</p><h2>Your bag</h2></div><button id="cart-close" class="modal-close">×</button></div><div id="cart-items" class="cart-items"></div><div class="cart-foot"><div><span>Subtotal</span><strong id="cart-subtotal">₹0.00</strong></div><div><span>Delivery</span><strong id="cart-shipping">₹0.00</strong></div><div><span>Total</span><strong id="cart-total">₹0</strong></div><div class="shipping-progress" id="shipping-progress" aria-live="polite"><div class="shipping-progress-track"><span id="shipping-progress-bar"></span></div><small id="shipping-progress-note">Free delivery above ₹799</small></div><button class="button button-dark checkout" id="checkout">Checkout <span>↗</span></button><small>Secure checkout · WhatsApp updates on every order</small></div></aside>
   <aside class="cart-drawer checkout-drawer" id="checkout-drawer"><div class="cart-head"><div><p class="eyebrow">Almost there</p><h2>Delivery details</h2></div><button id="checkout-close" class="modal-close">×</button></div>
     <div id="checkout-form-panel">
       <form id="checkout-form" class="checkout-form">

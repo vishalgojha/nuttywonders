@@ -76,3 +76,18 @@
 @media(max-width:650px){.track-steps{flex-wrap:wrap;gap:14px}}
 @media(max-width:900px){.brand-logo{width:84px}}
 @media(max-width:650px){.brand-logo{width:72px}}
+/* Shopify-style shopping shortcuts: quick add on cards and delivery progress in bag. */
+.product-visual-wrap{position:relative}
+.quick-add{position:absolute;right:12px;bottom:12px;width:36px;height:36px;border:0;border-radius:50%;background:var(--paper);color:var(--ink);font-size:23px;line-height:1;box-shadow:0 4px 14px rgba(31,48,15,.14);cursor:pointer;opacity:0;transform:translateY(5px);transition:opacity .2s,transform .2s,background .2s}
+.product-card:hover .quick-add,.quick-add:focus-visible{opacity:1;transform:none}
+.quick-add:hover{background:var(--yellow)}
+.shipping-progress{margin:2px 0 20px}
+.shipping-progress-track{height:5px;background:#ebe3c7;border-radius:10px;overflow:hidden}
+.shipping-progress-track span{display:block;width:0;height:100%;background:var(--orange);border-radius:inherit;transition:width .3s ease}
+.shipping-progress small{display:block;margin-top:8px;color:#7f8877;font-size:10px;text-align:center}
+@media(max-width:650px){.quick-add{opacity:1;transform:none;width:34px;height:34px}.shipping-progress{margin-bottom:18px}}
+.cart-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-color:var(--line);background:var(--paper);box-shadow:0 3px 0 rgba(31,48,15,.05);transition:transform .2s,box-shadow .2s,background .2s}
+.cart-btn:hover{background:var(--yellow);box-shadow:0 5px 0 rgba(31,48,15,.08);transform:translateY(-1px)}
+.bag-icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.cart-btn #cart-count{margin-left:0;width:20px;height:20px;font-size:10px}
+@media(max-width:650px){.cart-label{display:none}.cart-btn{padding:9px 10px;gap:5px}.bag-icon{width:20px;height:20px}}
