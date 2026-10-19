@@ -776,8 +776,30 @@ function renderWhatsApp() {
     qrBox.hidden = false;
     qrBox.innerHTML = pairingQr(wa.qr_code) +
       '<small>Expires in about 20 seconds — it refreshes on its own.</small>';
+    openPairingLightbox(wa.qr_code);
   } else {
     qrBox.hidden = true;
+    if (connected || $('#pairing-lightbox').classList.contains('open')) closePairingLightbox();
+  }
+}
+
+function openPairingLightbox(qrCode) {
+  const lightbox = $('#pairing-lightbox');
+  $('#pairing-lightbox-qr').innerHTML = pairingQr(qrCode);
+  lightbox.classList.add('open');
+}
+
+function closePairingLightbox() {
+  $('#pairing-lightbox').classList.remove('open');
+  $('#pairing-lightbox-qr').innerHTML = '';
+}
+
+async function requestPairingCode() {
+  try {
+    const result = await api('/admin/whatsapp/pair-code', { method: 'POST', body: {} });
+    toast(`Pairing code: ${result.code}`);
+  } catch (err) {
+    toast(err.message);
   }
 }
 
@@ -874,13 +896,9 @@ function wire() {
   $('#broadcast-draft').addEventListener('click', (event) => sendBroadcast(event, true));
 
   $('#pair-code').addEventListener('click', async () => {
-    try {
-      const result = await api('/admin/whatsapp/pair-code', { method: 'POST', body: {} });
-      toast(`Pairing code: ${result.code}`);
-    } catch (err) {
-      toast(err.message);
-    }
+    await requestPairingCode();
   });
+  $('#pairing-lightbox-phone-code').addEventListener('click', requestPairingCode);
 
   $('#wa-logout').addEventListener('click', async () => {
     if (!confirm('Unlink this number? You will need to scan a new QR code.')) return;

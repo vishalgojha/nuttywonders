@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
   <!-- Version the Studio stylesheet so an older service-worker/browser cache
        cannot leave the login screen rendered as unstyled HTML. -->
-  <link rel="stylesheet" href="/admin.css?v=20261019-6" />
+  <link rel="stylesheet" href="/admin.css?v=20261020-1" />
 </head>
 <body>
   <div class="login-screen" id="login-screen">
@@ -220,8 +220,21 @@
     </form>
   </div></div>
 
+  <div class="modal pairing-lightbox" id="pairing-lightbox" role="dialog" aria-modal="true" aria-labelledby="pairing-lightbox-title">
+    <div class="modal-card pairing-lightbox-card">
+      <div class="pairing-lightbox-copy">
+        <p class="eyebrow">WhatsApp pairing</p>
+        <h2 id="pairing-lightbox-title">Scan to link your number</h2>
+        <p>On your phone, open WhatsApp → Linked devices → Link a device, then scan this code.</p>
+      </div>
+      <div class="pairing-lightbox-qr" id="pairing-lightbox-qr"></div>
+      <small class="pairing-lightbox-note" id="pairing-lightbox-note">The code refreshes automatically until the number is connected.</small>
+      <button class="button button-ghost" id="pairing-lightbox-phone-code" type="button">Use phone pairing code instead</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
   <script src="/qr.js?v=20261019-3"></script>
-  <script src="/admin.js?v=20261019-6"></script>
+  <script src="/admin.js?v=20261020-1"></script>
 </body>
 </html>
