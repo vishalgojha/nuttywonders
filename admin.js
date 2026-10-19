@@ -6,7 +6,10 @@ const state = {
   dashboard: null,
   wa: null,
   editingOrderLines: [],
+  resetAccessToken: '',
 };
+
+const OWNER_EMAIL = 'nuttywonders.co@gmail.com';
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -96,6 +99,77 @@ async function signIn(event) {
   } finally {
     button.disabled = false;
     button.textContent = 'Sign in';
+  }
+}
+
+async function sendLoginEmail(kind) {
+  const button = kind === 'magic' ? $('#magic-link') : $('#forgot-password');
+  const error = $('#login-error');
+  error.textContent = '';
+  button.disabled = true;
+  button.textContent = 'Sending…';
+  try {
+    const path = kind === 'magic' ? '/admin/session/magic-link' : '/admin/session/recover';
+    const result = await api(path, { method: 'POST', body: { email: OWNER_EMAIL } });
+    error.className = 'login-success';
+    error.textContent = result.message;
+  } catch (err) {
+    error.className = 'login-error';
+    error.textContent = err.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = kind === 'magic' ? 'Email me a magic link' : 'Forgot password?';
+  }
+}
+
+async function resetPassword(event) {
+  event.preventDefault();
+  const password = $('#reset-password').value;
+  const confirmation = $('#reset-password-confirm').value;
+  const error = $('#reset-error');
+  if (password.length < 8) { error.textContent = 'Use at least 8 characters.'; return; }
+  if (password !== confirmation) { error.textContent = 'The passwords do not match.'; return; }
+  const button = $('#reset-submit');
+  button.disabled = true;
+  button.textContent = 'Saving…';
+  try {
+    await api('/admin/session/reset-password', { method: 'POST', body: { access_token: state.resetAccessToken, password } });
+    $('#reset-form').hidden = true;
+    $('#login-screen').hidden = false;
+    $('#login-password').value = '';
+    $('#login-error').className = 'login-success';
+    $('#login-error').textContent = 'Password created. You can now sign in.';
+  } catch (err) {
+    error.textContent = err.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Create password';
+  }
+}
+
+async function handleAuthCallback() {
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const accessToken = params.get('access_token');
+  if (!accessToken) return false;
+  const type = params.get('type');
+  state.resetAccessToken = accessToken;
+  history.replaceState(null, '', type === 'recovery' ? '/admin.html#reset-password' : '/admin.html');
+  if (type === 'recovery') {
+    $('#login-screen').hidden = true;
+    $('#reset-form').hidden = false;
+    return true;
+  }
+  try {
+    await api('/admin/session/magic-link/complete', {
+      method: 'POST',
+      body: { access_token: accessToken, refresh_token: params.get('refresh_token') || '', expires_in: Number(params.get('expires_in') || 3600) },
+    });
+    showStudio(OWNER_EMAIL);
+    await refreshAll();
+    return true;
+  } catch (err) {
+    $('#login-error').textContent = err.message;
+    return false;
   }
 }
 
@@ -242,6 +316,8 @@ function openOrderDetails(id) {
   $('#order-address').value = order.address_line1 || '';
   $('#order-city').value = order.city || '';
   $('#order-pincode').value = order.pincode || '';
+  $('#add-order-line').hidden = true;
+  $('#order-form button[type="submit"]').textContent = 'Save changes';
   $('#order-lines').innerHTML = order.items.map((item) => `
     <div class="order-edit-line"><span>${escapeHtml(item.product_name)} × ${item.quantity}</span><strong>${money(item.line_total_inr)}</strong></div>`).join('')
     + `<p class="order-edit-total">Total ${money(order.total_inr)} · ${escapeHtml(paymentLabel(order.payment_status))}</p>`;
@@ -254,6 +330,8 @@ function openNewOrder() {
   $('#order-form').reset();
   $('#order-form-title').textContent = 'New order';
   $('#order-id').value = '';
+  $('#add-order-line').hidden = false;
+  $('#order-form button[type="submit"]').textContent = 'Save order';
   state.editingOrderLines = [];
   renderOrderLines();
   $('#order-modal').classList.add('open');
@@ -284,6 +362,27 @@ function renderOrderLines() {
 
 async function submitOrder(event) {
   event.preventDefault();
+  const existingId = $('#order-id').value;
+  if (existingId) {
+    try {
+      await api(`/admin/orders/${existingId}`, {
+        method: 'PATCH',
+        body: {
+          customer_name: $('#order-customer').value.trim(),
+          phone_e164: $('#order-phone').value.trim(),
+          address_line1: $('#order-address').value.trim(),
+          city: $('#order-city').value.trim(),
+          pincode: $('#order-pincode').value.trim(),
+        },
+      });
+      $('#order-modal').classList.remove('open');
+      toast('Order details updated');
+      await refreshAll();
+    } catch (err) {
+      toast(err.message);
+    }
+    return;
+  }
   const items = state.editingOrderLines.filter((line) => line.product_id && line.quantity > 0);
   if (!items.length) {
     toast('Add at least one item');
@@ -490,20 +589,38 @@ const settingFields = [
   ['instagram_url', 'Instagram URL', ''],
 ];
 
+const numericSettings = new Set(['delivery_fee_inr', 'free_shipping_over_inr']);
+
+async function saveSetting(input, button, status) {
+  button.disabled = true;
+  status.textContent = 'Saving…';
+  try {
+    const result = await api(`/admin/settings/${input.dataset.setting}`, {
+      method: 'PUT',
+      body: { value: input.value.trim() },
+    });
+    input.value = result.value ?? input.value;
+    status.textContent = 'Saved';
+    toast(`${input.dataset.setting.replaceAll('_', ' ')} saved`);
+  } catch (err) {
+    status.textContent = err.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function renderSettings() {
   $('#settings-grid').innerHTML = settingFields.map(([key, label, hint]) => `
     <label class="setting">
       <span>${escapeHtml(label)}${hint ? `<small>${escapeHtml(hint)}</small>` : ''}</span>
-      <input data-setting="${key}" value="${escapeHtml(state.settings[key] ?? '')}" />
+      <div class="setting-control"><input data-setting="${key}" type="${numericSettings.has(key) ? 'number' : 'text'}" ${numericSettings.has(key) ? 'min="0" step="1"' : ''} value="${escapeHtml(state.settings[key] ?? '')}" /><button type="button" data-setting-save="${key}">Save</button></div>
+      <small class="setting-status" data-setting-status="${key}"></small>
     </label>`).join('');
 
-  $$('[data-setting]').forEach((input) => input.addEventListener('change', async () => {
-    try {
-      await api(`/admin/settings/${input.dataset.setting}`, { method: 'PUT', body: { value: input.value.trim() } });
-      toast('Setting saved');
-    } catch (err) {
-      toast(err.message);
-    }
+  $$('[data-setting-save]').forEach((button) => button.addEventListener('click', () => {
+    const input = document.querySelector(`[data-setting="${button.dataset.settingSave}"]`);
+    const status = document.querySelector(`[data-setting-status="${button.dataset.settingSave}"]`);
+    saveSetting(input, button, status);
   }));
 }
 
@@ -579,6 +696,9 @@ function showSection(id) {
 
 function wire() {
   $('#login-form').addEventListener('submit', signIn);
+  $('#magic-link').addEventListener('click', () => sendLoginEmail('magic'));
+  $('#forgot-password').addEventListener('click', () => sendLoginEmail('reset'));
+  $('#reset-form').addEventListener('submit', resetPassword);
   $('#sign-out').addEventListener('click', signOut);
 
   $('#search').addEventListener('input', renderProducts);
@@ -642,6 +762,7 @@ function wire() {
 
 async function init() {
   wire();
+  if (await handleAuthCallback()) return;
   try {
     await api('/admin/me');
     showStudio();

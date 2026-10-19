@@ -17,8 +17,12 @@
 .login-card input{border:1px solid var(--line);background:var(--paper);padding:12px 13px;font-size:14px;text-transform:none;letter-spacing:0;outline:0}
 .login-card input:focus{border-color:var(--orange)}
 .login-error{color:#a8412c;font-size:11px;min-height:15px;margin:0}
+.login-success{color:#47713b;font-size:11px;min-height:15px;margin:0}
 .login-card .button{justify-content:center}
 .login-card .text-link{align-self:center;color:#7f8877}
+.login-links{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}
+.login-action{border:0;background:none;cursor:pointer;font:inherit}
+.reset-card[hidden]{display:none}
 .studio[hidden]{display:none}
 
 /* --- layout -------------------------------------------------------------- */
@@ -119,3 +123,15 @@
 #product-form .optional{display:inline;color:#a6ae9f;font-weight:400;text-transform:none;letter-spacing:0}
 section[hidden]{display:none!important}
 @media(max-width:1100px){.order-row{grid-template-columns:1fr auto;gap:12px}.order-actions{grid-column:1/-1;max-width:none;justify-content:flex-start}.broadcast-form,.settings-grid,.wa-panel{grid-template-columns:1fr}.wa-actions{align-items:flex-start}.message-row{grid-template-columns:1fr}}
+
+/* Form controls are intentionally scoped here because the modal markup uses
+   direct labels rather than the older .fields wrapper. */
+.modal-card{width:min(900px,100%);max-height:calc(100vh - 40px);overflow:auto}
+#product-form,#order-form{display:flex;flex-direction:column;gap:15px}
+#product-form>label,#order-form>label,#product-form .two label,#order-form .two label{display:flex;flex-direction:column;gap:7px;color:#7b8878;font-size:10px;font-weight:700}
+#product-form input,#product-form select,#product-form textarea,#order-form input,#order-form select,#order-form textarea{display:block;width:100%;border:1px solid var(--line);background:#fffdf8;outline:0;padding:11px 12px;margin-top:0;font-size:13px;font-family:inherit;resize:vertical;color:var(--ink)}
+#product-form input:focus,#product-form select:focus,#product-form textarea:focus,#order-form input:focus,#order-form select:focus,#order-form textarea:focus{border-color:var(--orange)}
+#product-form .two,#order-form .two{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+#product-form .form-actions,#order-form .form-actions{margin-top:5px}
+.setting{background:#fbfbf7;border:1px solid var(--line);padding:15px}
+.setting-control{display:flex;gap:8px}.setting-control input{flex:1;min-width:0}.setting-control button{border:1px solid var(--line);background:var(--ink);color:#fff;padding:0 13px;font-size:11px;font-weight:700;cursor:pointer}.setting-control button:disabled{opacity:.6}.setting-status{font-size:10px;color:#47713b;min-height:12px}

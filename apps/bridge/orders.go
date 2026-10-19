@@ -317,6 +317,11 @@ type orderUpdateRequest struct {
 	PaymentStatus  *string `json:"payment_status"`
 	InternalNote   *string `json:"internal_note"`
 	NotifyCustomer *bool   `json:"notify_customer"`
+	CustomerName   *string `json:"customer_name"`
+	PhoneE164      *string `json:"phone_e164"`
+	AddressLine1   *string `json:"address_line1"`
+	City           *string `json:"city"`
+	Pincode        *string `json:"pincode"`
 }
 
 func (s *Server) handleAdminUpdateOrder(w http.ResponseWriter, r *http.Request, _ adminIdentity) {
@@ -349,6 +354,19 @@ func (s *Server) handleAdminUpdateOrder(w http.ResponseWriter, r *http.Request, 
 	if req.InternalNote != nil {
 		body["internal_note"] = strings.TrimSpace(*req.InternalNote)
 	}
+	if req.CustomerName != nil {
+		name := strings.TrimSpace(*req.CustomerName)
+		if name == "" { writeError(w, http.StatusBadRequest, "customer name is required"); return }
+		body["customer_name"] = name
+	}
+	if req.PhoneE164 != nil {
+		phone, phoneErr := normalizePhone(*req.PhoneE164)
+		if phoneErr != nil { writeError(w, http.StatusBadRequest, errBadPhone.Error()); return }
+		body["phone_e164"] = phone
+	}
+	if req.AddressLine1 != nil { body["address_line1"] = strings.TrimSpace(*req.AddressLine1) }
+	if req.City != nil { body["city"] = strings.TrimSpace(*req.City) }
+	if req.Pincode != nil { body["pincode"] = strings.TrimSpace(*req.Pincode) }
 
 	// Asking for a notification is a request on its own: the Studio sends
 	// notify_customer without any other change when it re-sends a receipt.

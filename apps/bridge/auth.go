@@ -22,6 +22,8 @@ var (
 	adminCacheSweepThreshold = 32
 )
 
+const adminOwnerEmail = "nuttywonders.co@gmail.com"
+
 type adminIdentity struct {
 	UserID string
 	Email  string
@@ -224,6 +226,53 @@ func (a *AdminAuth) signIn(ctx context.Context, email, password string) (accessT
 		return "", "", 0, errBadCredentials
 	}
 	return payload.AccessToken, payload.RefreshToken, payload.ExpiresIn, nil
+}
+
+func (a *AdminAuth) sendEmail(ctx context.Context, path, email, redirectTo string) error {
+	if strings.ToLower(strings.TrimSpace(email)) != adminOwnerEmail {
+		return errBadCredentials
+	}
+	body := map[string]any{"email": adminOwnerEmail, "redirect_to": redirectTo}
+	if path == "/otp" {
+		body["create_user"] = false
+	}
+	_, status, err := a.postAuth(ctx, path, body)
+	if err != nil {
+		return err
+	}
+	if status == http.StatusBadRequest || status == http.StatusUnauthorized || status == http.StatusNotFound {
+		return errBadCredentials
+	}
+	if status < 200 || status >= 300 {
+		return fmt.Errorf("auth email failed with status %d", status)
+	}
+	return nil
+}
+
+func (a *AdminAuth) updatePassword(ctx context.Context, accessToken, password string) error {
+	body, err := json.Marshal(map[string]string{"password": password})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, a.authURL+"/user", strings.NewReader(string(body)))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("apikey", a.apiKey)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := a.http.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return errBadToken
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("password update failed with status %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // refresh turns a refresh token into a new access token. Supabase rotates

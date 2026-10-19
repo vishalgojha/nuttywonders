@@ -14,7 +14,7 @@ insert into public.app_settings (key, value) values
   ('owner_phone_e164',     '"918108398025"'::jsonb),
   ('whatsapp_link',        '"https://wa.me/918108398025"'::jsonb),
   ('instagram',            '"https://www.instagram.com/nuttywonders/"'::jsonb),
-  ('email',                '"Kavita@nuttywonders.com"'::jsonb),
+  ('email',                '"nuttywonders.co@gmail.com"'::jsonb),
   ('upi_vpa',              '""'::jsonb),
   ('payment_method',       '"razorpay"'::jsonb),
   ('delivery_fee_inr',     '60'::jsonb),

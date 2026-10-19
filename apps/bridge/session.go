@@ -25,6 +25,8 @@ const (
 	refreshCookieMaxAge = 30 * 24 * 3600
 )
 
+const adminRedirectPath = "/admin.html"
+
 func (s *Server) setSessionCookies(w http.ResponseWriter, access, refresh string, expiresIn int) {
 	secure := s.auth.secureCookies
 
@@ -63,7 +65,11 @@ func (s *Server) handleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email := strings.ToLower(strings.TrimSpace(req.Email))
-	if email == "" || req.Password == "" {
+	if email != adminOwnerEmail {
+		writeError(w, http.StatusUnauthorized, "use the NuttyWonders owner email")
+		return
+	}
+	if req.Password == "" {
 		writeError(w, http.StatusBadRequest, "enter your email and password")
 		return
 	}
@@ -103,6 +109,51 @@ func (s *Server) handleSignIn(w http.ResponseWriter, r *http.Request) {
 		"role":       "admin",
 		"email":      identity.Email,
 	})
+}
+
+func (s *Server) handlePasswordRecovery(w http.ResponseWriter, r *http.Request) {
+	var req struct{ Email string `json:"email"` }
+	if !decodeJSON(w, r, &req) { return }
+	ctx, cancel := contextWithRequestTimeout(r, 20*time.Second); defer cancel()
+	if err := s.auth.sendEmail(ctx, "/recover", req.Email, s.cfg.PublicBaseURL+adminRedirectPath); err != nil {
+		writeError(w, http.StatusBadRequest, "we could not send the password email right now")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"message": "Check the owner email for a password reset link."})
+}
+
+func (s *Server) handleMagicLinkRequest(w http.ResponseWriter, r *http.Request) {
+	var req struct{ Email string `json:"email"` }
+	if !decodeJSON(w, r, &req) { return }
+	ctx, cancel := contextWithRequestTimeout(r, 20*time.Second); defer cancel()
+	if err := s.auth.sendEmail(ctx, "/otp", req.Email, s.cfg.PublicBaseURL+adminRedirectPath); err != nil {
+		writeError(w, http.StatusBadRequest, "we could not send the magic link right now")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"message": "Check the owner email for your magic link."})
+}
+
+func (s *Server) handlePasswordReset(w http.ResponseWriter, r *http.Request) {
+	var req struct { AccessToken string `json:"access_token"`; Password string `json:"password"` }
+	if !decodeJSON(w, r, &req) { return }
+	if len(req.Password) < 8 || req.AccessToken == "" { writeError(w, http.StatusBadRequest, "use a valid reset link and an 8-character password"); return }
+	ctx, cancel := contextWithRequestTimeout(r, 20*time.Second); defer cancel()
+	identity, err := s.auth.identity(ctx, req.AccessToken)
+	if err != nil || identity.Email != adminOwnerEmail { writeError(w, http.StatusUnauthorized, "this reset link is not valid"); return }
+	if err := s.auth.updatePassword(ctx, req.AccessToken, req.Password); err != nil { writeError(w, http.StatusUnauthorized, "this reset link has expired"); return }
+	writeJSON(w, http.StatusOK, map[string]string{"message": "Password created. You can now sign in."})
+}
+
+func (s *Server) handleMagicLinkComplete(w http.ResponseWriter, r *http.Request) {
+	var req struct { AccessToken string `json:"access_token"`; RefreshToken string `json:"refresh_token"`; ExpiresIn int `json:"expires_in"` }
+	if !decodeJSON(w, r, &req) { return }
+	if req.AccessToken == "" { writeError(w, http.StatusBadRequest, "missing magic-link token"); return }
+	ctx, cancel := contextWithRequestTimeout(r, 20*time.Second); defer cancel()
+	identity, err := s.auth.identity(ctx, req.AccessToken)
+	if err != nil || identity.Email != adminOwnerEmail { writeError(w, http.StatusUnauthorized, "this magic link is not valid"); return }
+	if req.ExpiresIn <= 0 { req.ExpiresIn = 3600 }
+	s.setSessionCookies(w, req.AccessToken, req.RefreshToken, req.ExpiresIn)
+	writeJSON(w, http.StatusOK, map[string]string{"email": identity.Email})
 }
 
 func (s *Server) handleRefreshSession(w http.ResponseWriter, r *http.Request) {
