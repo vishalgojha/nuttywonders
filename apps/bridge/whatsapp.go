@@ -22,6 +22,10 @@ import (
 
 const pushName = "NuttyWonders"
 
+// WhatsApp validates this separately from the push name. PairPhone expects a
+// browser/OS label in the form "Browser (OS)".
+const pairClientDisplayName = "Chrome (Linux)"
+
 type inboundHandler func(ctx context.Context, phone, body string)
 
 type whatsapp struct {
@@ -395,7 +399,7 @@ func (w *whatsapp) RequestPairingCode(ctx context.Context, phone string) (string
 		case <-deadline.C:
 		}
 	}
-	return cli.PairPhone(ctx, normalised, true, whatsmeow.PairClientOtherWebClient, pushName)
+	return cli.PairPhone(ctx, normalised, true, whatsmeow.PairClientOtherWebClient, pairClientDisplayName)
 }
 
 // SetPushName renames the chat list entry customers see.
