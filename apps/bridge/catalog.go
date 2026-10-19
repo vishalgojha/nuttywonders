@@ -143,9 +143,18 @@ func (s *Server) handleAdminSaveProduct(w http.ResponseWriter, r *http.Request, 
 	}
 
 	var saved []Product
-	if err := s.db.Upsert(ctx, "products", body, &saved); err != nil {
-		s.writeUpstreamError(w, err)
-		return
+	if input.ID != nil && *input.ID > 0 {
+		query := url.Values{}
+		query.Set("id", "eq."+strconv.FormatInt(*input.ID, 10))
+		if err := s.db.Update(ctx, "products", query, body, &saved); err != nil {
+			s.writeUpstreamError(w, err)
+			return
+		}
+	} else {
+		if err := s.db.Upsert(ctx, "products", body, &saved); err != nil {
+			s.writeUpstreamError(w, err)
+			return
+		}
 	}
 	if len(saved) == 0 {
 		writeError(w, http.StatusBadGateway, "product was not saved")
