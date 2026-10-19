@@ -34,6 +34,7 @@ const state = {
   settings: {},
   current: null,
   filter: 'all',
+  moment: 'all',
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -55,9 +56,12 @@ function escapeHtml(value) {
 }
 
 function renderProducts() {
-  const list = state.filter === 'all'
+  const categoryList = state.filter === 'all'
     ? state.products
     : state.products.filter((p) => p.category === state.filter);
+  const list = state.moment === 'all'
+    ? categoryList
+    : categoryList.filter((product) => productMatchesMoment(product, state.moment));
 
   $('#product-count').textContent = `${list.length} snack${list.length === 1 ? '' : 's'}`;
   $('#product-grid').innerHTML = list.map((product) => `
@@ -67,6 +71,7 @@ function renderProducts() {
         <div>
           <h3>${escapeHtml(product.name)}</h3>
           <p>${packLabel(product.pack_size_g)} · ${escapeHtml(product.category)}</p>
+          <div class="benefit-tags">${productBenefits(product).map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
         </div>
         <span class="product-price">${money(product.price_inr)}</span>
       </div>
@@ -79,6 +84,26 @@ function renderProducts() {
     event.stopPropagation();
     addToCart(productById(button.closest('.product-card').dataset.id));
   }));
+}
+
+function productBenefits(product) {
+  const name = `${product.name || ''} ${(product.ingredients || []).join(' ')}`.toLowerCase();
+  const tags = [];
+  if (product.category === 'granola') tags.push('Breakfast-ready');
+  if (name.includes('ragi') || name.includes('millet')) tags.push('Millet goodness');
+  if (name.includes('date')) tags.push('Naturally sweet');
+  if (name.includes('cocoa') || name.includes('chocolate')) tags.push('Chocolate comfort');
+  if (product.category === 'bars') tags.push('Chai-time crunch');
+  if (!tags.length) tags.push('Small-batch made');
+  return tags.slice(0, 2);
+}
+
+function productMatchesMoment(product, moment) {
+  const text = `${product.name || ''} ${product.description || ''} ${(product.ingredients || []).join(' ')}`.toLowerCase();
+  if (moment === 'breakfast') return product.category === 'granola' || text.includes('oats');
+  if (moment === 'chai') return product.category === 'bars' || product.category === 'bites' || text.includes('cocoa') || text.includes('chocolate');
+  if (moment === 'gifting') return product.category === 'granola' || product.category === 'bars' || text.includes('truffle');
+  return true;
 }
 
 function openModal(product) {
@@ -118,6 +143,20 @@ function addToCart(product) {
   saveCart();
   renderCart();
   toast(`${product.name} added to your bag`);
+}
+
+function addBundle(key) {
+  const bundles = {
+    breakfast: ['chocolate-granola', 'berries-granola', 'apple-cinnamon-granola'],
+    chai: ['cocoa-ragi-bites', 'oats-bites', 'crunchy-munchy-snack'],
+    gifting: ['berries-granola', 'dates-nuts-bites', 'cashew-truffles'],
+  };
+  const selected = (bundles[key] || []).map((slug) => state.products.find((product) => product.slug === slug)).filter(Boolean);
+  selected.forEach((product) => addToCart(product));
+  if (selected.length) {
+    renderCart();
+    $('#cart-drawer').classList.add('open');
+  }
 }
 
 function saveCart() {
@@ -407,6 +446,13 @@ function wireEvents() {
     state.filter = button.dataset.filter;
     renderProducts();
   }));
+  $$('.moment').forEach((button) => button.addEventListener('click', () => {
+    $$('.moment').forEach((other) => other.classList.remove('active'));
+    button.classList.add('active');
+    state.moment = button.dataset.moment;
+    renderProducts();
+  }));
+  $$('.bundle-add').forEach((button) => button.addEventListener('click', () => addBundle(button.dataset.bundle)));
 
   $('#modal-close').addEventListener('click', () => $('#modal-backdrop').classList.remove('open'));
   $('#modal-backdrop').addEventListener('click', (event) => {

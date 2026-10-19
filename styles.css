@@ -91,3 +91,23 @@
 .bag-icon{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cart-btn #cart-count{margin-left:0;width:20px;height:20px;font-size:10px}
 @media(max-width:650px){.cart-label{display:none}.cart-btn{padding:9px 10px;gap:5px}.bag-icon{width:20px;height:20px}}
+.moment-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-20px 0 31px;padding:13px 0;border-bottom:1px solid var(--line)}
+.moment-label{font-size:11px;color:#7f8877;margin-right:5px}
+.moment{border:1px solid var(--line);background:var(--paper);border-radius:30px;padding:9px 13px;color:#748071;font-size:11px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+.moment:hover,.moment.active{background:var(--moss);border-color:var(--moss);color:#fff}
+.benefit-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.benefit-tags span{background:#f1e7c4;color:#66714f;border-radius:20px;padding:4px 7px;font-size:9px;white-space:nowrap}
+.bundle-section{padding:0 8vw 110px;background:var(--cream)}
+.bundle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.bundle-card{min-height:245px;padding:27px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;position:relative;overflow:hidden}
+.bundle-card:before{content:'';position:absolute;width:170px;height:170px;border-radius:50%;right:-32px;top:-40px;background:rgba(255,255,255,.2)}
+.bundle-card>*{position:relative;z-index:1}
+.bundle-card .eyebrow{margin-bottom:auto;color:inherit;opacity:.65}
+.bundle-card h3{font-family:var(--serif);font-size:28px;line-height:1;margin:0 0 10px}
+.bundle-card p:not(.eyebrow){font-size:12px;line-height:1.5;max-width:190px;margin:0 0 22px;opacity:.78}
+.bundle-card .text-link{border-color:currentColor}
+.bundle-breakfast{background:#d8dfc7;color:var(--ink)}
+.bundle-chai{background:#e6bf72;color:var(--ink)}
+.bundle-gifting{background:#b77b52;color:#fff8df}
+@media(max-width:900px){.bundle-section{padding-left:6vw;padding-right:6vw}.bundle-grid{grid-template-columns:1fr 1fr}.bundle-card:last-child{grid-column:span 2}}
+@media(max-width:650px){.moment-row{margin:-10px 0 25px;flex-wrap:nowrap;overflow:auto;padding-bottom:12px}.moment-label{flex:none}.moment{flex:none}.bundle-section{padding:0 5vw 75px}.bundle-grid{display:block}.bundle-card{min-height:205px;margin-bottom:12px}.bundle-card:last-child{margin-bottom:0}.benefit-tags{gap:4px}.benefit-tags span{font-size:8px;padding:3px 6px}}
