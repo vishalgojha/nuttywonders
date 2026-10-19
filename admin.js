@@ -330,8 +330,19 @@ function renderCustomers() {
       <div class="customer-stat"><b>${money(totalSpent)}</b><small>spent</small></div>
       <div class="customer-last"><b>${lastOrder ? escapeHtml(lastOrder.code) : 'No orders'}</b><small>${lastOrder ? formatWhen(lastOrder.created_at) : 'New customer'}</small></div>
       <em class="tag">${customer.marketing_opt_in ? 'Opted in' : customer.unsubscribed ? 'Unsubscribed' : 'No marketing'}</em>
+      <button class="button button-ghost customer-handoff" data-handoff="${customer.id}">${customer.support_mode === 'human' ? 'Resume AI' : 'Pause AI'}</button>
     </div>`;
   }).join('') : '<div class="empty">No customers match this search.</div>';
+  $$('[data-handoff]').forEach((button) => button.addEventListener('click', async () => {
+    const customer = state.customers.find((item) => String(item.id) === button.dataset.handoff);
+    if (!customer) return;
+    button.disabled = true;
+    try {
+      await api(`/admin/customers/${customer.id}`, { method: 'PATCH', body: { support_mode: customer.support_mode === 'human' ? 'ai' : 'human' } });
+      toast(customer.support_mode === 'human' ? 'AI resumed for this customer' : 'Human handoff enabled');
+      await refreshAll();
+    } catch (err) { toast(err.message); button.disabled = false; }
+  }));
 }
 
 function bindSectionLinks() {
@@ -638,7 +649,15 @@ async function loadMessages() {
           <small>${formatWhen(message.created_at)} · ${escapeHtml(message.status)}</small>
         </div>
         <p>${escapeHtml(message.body || '')}</p>
+        ${message.payment_review_status ? `<div class="payment-review"><span class="tag review-${escapeHtml(message.payment_review_status)}">Payment ${escapeHtml(message.payment_review_status)}</span>${message.payment_review_status === 'pending' ? `<button class="button button-ghost" data-review-message="${message.id}" data-review-status="approved">Approve</button><button class="button button-ghost" data-review-message="${message.id}" data-review-status="rejected">Reject</button>` : ''}</div>` : ''}
       </div>`).join('') : '<div class="empty">No messages yet. Once your number is linked, replies land here.</div>';
+    $$('[data-review-message]').forEach((button) => button.addEventListener('click', async () => {
+      try {
+        await api(`/admin/conversations/${button.dataset.reviewMessage}/review`, { method: 'PATCH', body: { status: button.dataset.reviewStatus } });
+        toast(`Payment ${button.dataset.reviewStatus}`);
+        await loadMessages();
+      } catch (err) { toast(err.message); }
+    }));
     if (phone) $('#reply-phone').value = phone;
   } catch (err) {
     toast(err.message);
@@ -665,7 +684,7 @@ async function sendReply(event) {
 function renderBroadcasts() {
   $('#broadcast-list').innerHTML = state.broadcasts.length ? state.broadcasts.map((broadcast) => `
     <div class="broadcast-row">
-      <div><strong>${escapeHtml(broadcast.title)}</strong><small>${escapeHtml(broadcast.segment)} · ${broadcast.sent_count}/${broadcast.audience_count} sent · ${formatWhen(broadcast.created_at)}</small></div>
+      <div><strong>${escapeHtml(broadcast.title)}</strong><small>${escapeHtml(broadcast.segment)} · ${broadcast.sent_count}/${broadcast.audience_count} sent · ${broadcast.scheduled_at ? `scheduled ${formatWhen(broadcast.scheduled_at)}` : formatWhen(broadcast.created_at)}</small></div>
       <span class="tag status-${escapeHtml(broadcast.status)}">${escapeHtml(broadcast.status)}</span>
     </div>`).join('') : '<div class="empty">No broadcasts yet.</div>';
 }
@@ -680,9 +699,11 @@ async function sendBroadcast(event, draft) {
         body: $('#broadcast-body').value.trim(),
         segment: $('#broadcast-segment').value,
         send_now: !draft,
+        scheduled_at: $('#broadcast-scheduled-at').value,
       },
     });
-    toast(draft ? 'Draft saved' : `Queued for ${result.broadcast.audience_count} customer(s)`);
+    toast(draft ? 'Draft saved' : result.scheduled ? `Scheduled for ${formatWhen(result.broadcast.scheduled_at)}` : `Queued for ${result.broadcast.audience_count} customer(s)`);
+    $('#broadcast-scheduled-at').value = '';
     await refreshAll();
   } catch (err) {
     toast(err.message);

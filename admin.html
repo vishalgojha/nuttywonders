@@ -141,7 +141,8 @@
             <option value="opt_in">Opted in only</option>
             <option value="all_customers">All customers</option>
           </select></label>
-          <label class="full">Message<textarea id="broadcast-body" rows="4" placeholder="Hi! Our new ragi brownie batch just landed…" required></textarea></label>
+      <label>Schedule <span class="optional">optional; leave blank to save/send now</span><input id="broadcast-scheduled-at" type="datetime-local" /></label>
+      <label class="full">Message<textarea id="broadcast-body" rows="4" placeholder="Hi! Our new ragi brownie batch just landed…" required></textarea></label>
           <div class="form-actions"><button class="button button-ghost" type="button" id="broadcast-draft">Save draft</button><button class="button button-dark" type="submit">Send broadcast</button></div>
         </form>
         <div class="broadcast-list" id="broadcast-list"></div>

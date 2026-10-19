@@ -96,6 +96,8 @@ type Customer struct {
 	Pincode        *string   `json:"pincode"`
 	MarketingOptIn bool      `json:"marketing_opt_in"`
 	Unsubscribed   bool      `json:"unsubscribed"`
+	SupportMode    string    `json:"support_mode"`
+	AssignedTo     *string   `json:"assigned_to"`
 	CreatedAt      time.Time `json:"created_at"`
 }
 
@@ -120,6 +122,10 @@ type WhatsAppMessage struct {
 	Status    string    `json:"status"`
 	OrderID   *int64    `json:"order_id"`
 	CreatedAt time.Time `json:"created_at"`
+	MessageType string `json:"message_type"`
+	PaymentReviewStatus *string `json:"payment_review_status"`
+	ReviewedAt *time.Time `json:"reviewed_at"`
+	ReviewNote *string `json:"review_note"`
 }
 
 type Broadcast struct {
@@ -132,6 +138,7 @@ type Broadcast struct {
 	SentCount     int        `json:"sent_count"`
 	CreatedAt     time.Time  `json:"created_at"`
 	SentAt        *time.Time `json:"sent_at"`
+	ScheduledAt   *time.Time `json:"scheduled_at"`
 }
 
 type Connection struct {

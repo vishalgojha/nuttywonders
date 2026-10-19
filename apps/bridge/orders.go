@@ -521,7 +521,7 @@ func (s *Server) handleAdminListCustomers(w http.ResponseWriter, r *http.Request
 	defer cancel()
 
 	query := url.Values{}
-	query.Set("select", "id,phone_e164,name,email,city,pincode,marketing_opt_in,unsubscribed,created_at")
+	query.Set("select", "id,phone_e164,name,email,city,pincode,marketing_opt_in,unsubscribed,support_mode,assigned_to,created_at")
 	query.Set("order", "created_at.desc")
 	query.Set("limit", "500")
 
@@ -546,6 +546,8 @@ func (s *Server) handleAdminUpdateCustomer(w http.ResponseWriter, r *http.Reques
 	var req struct {
 		MarketingOptIn *bool   `json:"marketing_opt_in"`
 		Unsubscribed   *bool   `json:"unsubscribed"`
+		SupportMode    *string `json:"support_mode"`
+		AssignedTo     *string `json:"assigned_to"`
 		Name           *string `json:"name"`
 		Email          *string `json:"email"`
 		City           *string `json:"city"`
@@ -564,6 +566,16 @@ func (s *Server) handleAdminUpdateCustomer(w http.ResponseWriter, r *http.Reques
 	}
 	if req.Unsubscribed != nil {
 		body["unsubscribed"] = *req.Unsubscribed
+	}
+	if req.SupportMode != nil {
+		if *req.SupportMode != "ai" && *req.SupportMode != "human" {
+			writeError(w, http.StatusBadRequest, "support mode must be ai or human")
+			return
+		}
+		body["support_mode"] = *req.SupportMode
+	}
+	if req.AssignedTo != nil {
+		body["assigned_to"] = strings.TrimSpace(*req.AssignedTo)
 	}
 	if req.Name != nil {
 		body["name"] = strings.TrimSpace(*req.Name)
@@ -629,7 +641,7 @@ func (s *Server) handleAdminConversations(w http.ResponseWriter, r *http.Request
 
 	phoneRaw := strings.TrimSpace(r.URL.Query().Get("phone"))
 	query := url.Values{}
-	query.Set("select", "id,direction,phone_e164,body,status,order_id,created_at")
+	query.Set("select", "id,direction,phone_e164,body,status,order_id,created_at,message_type,payment_review_status,reviewed_at,review_note")
 	query.Set("order", "created_at.desc")
 
 	if phoneRaw != "" {
@@ -653,6 +665,24 @@ func (s *Server) handleAdminConversations(w http.ResponseWriter, r *http.Request
 		messages = []WhatsAppMessage{}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"messages": messages})
+}
+
+func (s *Server) handleAdminReviewMessage(w http.ResponseWriter, r *http.Request, _ adminIdentity) {
+	id, err := pathInt64(r, "id")
+	if err != nil { writeError(w, http.StatusBadRequest, err.Error()); return }
+	var req struct { Status string `json:"status"`; Note string `json:"note"` }
+	if !decodeJSON(w, r, &req) { return }
+	if req.Status != "pending" && req.Status != "approved" && req.Status != "rejected" {
+		writeError(w, http.StatusBadRequest, "review status must be pending, approved, or rejected")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second); defer cancel()
+	query := url.Values{}; query.Set("id", "eq."+strconv.FormatInt(id, 10))
+	body := map[string]any{"payment_review_status": req.Status, "review_note": strings.TrimSpace(req.Note), "reviewed_at": time.Now().UTC().Format(time.RFC3339)}
+	var updated []WhatsAppMessage
+	if err := s.db.Update(ctx, "whatsapp_messages", query, body, &updated); err != nil { s.writeUpstreamError(w, err); return }
+	if len(updated) == 0 { writeError(w, http.StatusNotFound, "message not found"); return }
+	writeJSON(w, http.StatusOK, map[string]any{"message": updated[0]})
 }
 
 func (s *Server) handleRunRetention(w http.ResponseWriter, r *http.Request, _ adminIdentity) {

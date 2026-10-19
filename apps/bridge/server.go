@@ -61,6 +61,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/admin/customers", s.auth.requireAdmin(s.handleAdminListCustomers))
 	mux.Handle("PATCH /api/admin/customers/{id}", s.auth.requireAdmin(s.handleAdminUpdateCustomer))
 	mux.Handle("GET /api/admin/conversations", s.auth.requireAdmin(s.handleAdminConversations))
+	mux.Handle("PATCH /api/admin/conversations/{id}/review", s.auth.requireAdmin(s.handleAdminReviewMessage))
 	mux.Handle("GET /api/admin/jobs", s.auth.requireAdmin(s.handleAdminListJobs))
 	mux.Handle("GET /api/admin/settings", s.auth.requireAdmin(s.handleAdminSettings))
 	mux.Handle("PUT /api/admin/settings/{key}", s.auth.requireAdmin(s.handleAdminSaveSetting))

@@ -145,6 +145,7 @@ func (s *Server) handleAdminCreateBroadcast(w http.ResponseWriter, r *http.Reque
 		Body    string `json:"body"`
 		Segment string `json:"segment"`
 		SendNow bool   `json:"send_now"`
+		ScheduledAt string `json:"scheduled_at"`
 	}
 	if !decodeJSON(w, r, &req) {
 		return
@@ -181,6 +182,20 @@ func (s *Server) handleAdminCreateBroadcast(w http.ResponseWriter, r *http.Reque
 	if req.SendNow {
 		status = "queued"
 	}
+	var scheduledAt *time.Time
+	if strings.TrimSpace(req.ScheduledAt) != "" {
+		parsed, err := time.ParseInLocation("2006-01-02T15:04", strings.TrimSpace(req.ScheduledAt), time.Local)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "scheduled time is invalid")
+			return
+		}
+		if parsed.Before(time.Now()) {
+			writeError(w, http.StatusBadRequest, "scheduled time must be in the future")
+			return
+		}
+		scheduledAt = &parsed
+		status = "draft"
+	}
 
 	var created []Broadcast
 	insert := map[string]any{
@@ -189,6 +204,9 @@ func (s *Server) handleAdminCreateBroadcast(w http.ResponseWriter, r *http.Reque
 		"segment":        segment,
 		"status":         status,
 		"audience_count": len(recipients),
+	}
+	if scheduledAt != nil {
+		insert["scheduled_at"] = scheduledAt.UTC().Format(time.RFC3339)
 	}
 	if err := s.db.Insert(ctx, "broadcasts", insert, &created); err != nil {
 		s.writeUpstreamError(w, err)
@@ -210,7 +228,8 @@ func (s *Server) handleAdminCreateBroadcast(w http.ResponseWriter, r *http.Reque
 
 	writeJSON(w, http.StatusCreated, map[string]any{
 		"broadcast": broadcast,
-		"queued":    req.SendNow,
+		"queued":    req.SendNow && scheduledAt == nil,
+		"scheduled": scheduledAt != nil,
 	})
 }
 
@@ -306,7 +325,7 @@ func (s *Server) handleAdminListBroadcasts(w http.ResponseWriter, r *http.Reques
 	defer cancel()
 
 	query := url.Values{}
-	query.Set("select", "id,title,body,segment,status,audience_count,sent_count,created_at,sent_at")
+	query.Set("select", "id,title,body,segment,status,audience_count,sent_count,created_at,sent_at,scheduled_at")
 	query.Set("order", "created_at.desc")
 	query.Set("limit", "50")
 

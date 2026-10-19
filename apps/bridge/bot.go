@@ -16,6 +16,9 @@ func (s *Server) handleInboundWhatsApp(ctx context.Context, phone, body string) 
 	if !s.cfg.AutoReply {
 		return
 	}
+	if s.customerInHumanMode(ctx, phone) {
+		return
+	}
 	if !s.limit.allowKey("whatsapp", phone, 12, time.Minute) {
 		return
 	}
@@ -36,6 +39,18 @@ func (s *Server) handleInboundWhatsApp(ctx context.Context, phone, body string) 
 	}
 }
 
+func (s *Server) customerInHumanMode(ctx context.Context, phone string) bool {
+	query := url.Values{}
+	query.Set("phone_e164", "eq."+phone)
+	query.Set("select", "support_mode")
+	query.Set("limit", "1")
+	var rows []struct{ SupportMode string `json:"support_mode"` }
+	if err := s.db.Select(ctx, "customers", query, &rows); err != nil {
+		return false
+	}
+	return len(rows) > 0 && rows[0].SupportMode == "human"
+}
+
 var (
 	orderCodePattern = regexp.MustCompile(`\bNW-?\d{6}-?\d{3,4}\b`)
 	phonePattern     = regexp.MustCompile(`(\+?\d[\d\s\-]{8,16}\d)`)
@@ -53,6 +68,18 @@ func (s *Server) botReply(ctx context.Context, body string) (string, error) {
 			}
 			return "You will not get any more offers from NuttyWonders. Reply MENU any time to see our products.", nil
 		}
+	}
+	if matchesAny(lower, "human", "agent", "team member", "person", "representative") {
+		if err := s.setSupportMode(ctx, s.currentPhone(ctx), "human"); err != nil {
+			return "", err
+		}
+		return "A team member will take over this chat shortly. Reply AI if you want the assistant to resume.", nil
+	}
+	if strings.TrimSpace(lower) == "ai" {
+		if err := s.setSupportMode(ctx, s.currentPhone(ctx), "ai"); err != nil {
+			return "", err
+		}
+		return "The AI assistant is back on. How can we help?", nil
 	}
 
 	if s.cfg.AIBotEnabled && strings.TrimSpace(s.cfg.OpenRouterAPIKey) != "" {
@@ -94,6 +121,12 @@ func (s *Server) botReply(ctx context.Context, body string) (string, error) {
 	}
 
 	return s.fallbackReply(ctx, text)
+}
+
+func (s *Server) setSupportMode(ctx context.Context, phone, mode string) error {
+	query := url.Values{}
+	query.Set("phone_e164", "eq."+phone)
+	return s.db.Update(ctx, "customers", query, map[string]any{"support_mode": mode}, nil)
 }
 
 func matchesAny(haystack string, needles ...string) bool {

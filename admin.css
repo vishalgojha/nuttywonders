@@ -147,11 +147,13 @@ section[hidden]{display:none!important}
 @media(max-width:900px){.overview-grid{grid-template-columns:1fr}.customer-row{grid-template-columns:1fr auto}.customer-row>span{display:none}}
 .setting-control{display:flex;gap:8px}.setting-control input{flex:1;min-width:0}.setting-control button{border:1px solid var(--line);background:var(--ink);color:#fff;padding:0 13px;font-size:11px;font-weight:700;cursor:pointer}.setting-control button:disabled{opacity:.6}.setting-status{font-size:10px;color:#47713b;min-height:12px}
 /* Customer workspace details */
-.customer-row{grid-template-columns:minmax(220px,1.7fr) 70px 120px 145px 110px}
+.customer-row{grid-template-columns:minmax(220px,1.7fr) 70px 120px 145px 110px 100px}
 .customer-main small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .customer-stat b,.customer-last b{font-size:12px}
 .customer-stat small,.customer-last small{font-size:10px;color:#8c9586}
 @media(max-width:900px){.customer-row{grid-template-columns:1fr auto auto}.customer-last{display:none}.customer-row .tag{grid-column:2 / -1;justify-self:end}}
+.customer-handoff{padding:7px 9px;font-size:10px;white-space:nowrap}
+.payment-review{display:flex;align-items:center;gap:8px;margin-top:8px}.payment-review .button{padding:5px 8px;font-size:10px}.review-pending{color:#9a742e}.review-approved{color:#47713b}.review-rejected{color:#a8452c}
 .wa-subtitle{color:#7f8877;font-size:12px;line-height:1.6;max-width:620px;margin:10px 0 0}
 .wa-panel{background:#f3f5ed;border:1px solid #dfe6d6;border-top:0;margin-top:24px;padding:24px;grid-template-columns:1fr 270px;align-items:start}
 .wa-connect-copy{min-height:245px;display:flex;flex-direction:column;justify-content:space-between;padding:6px 0}

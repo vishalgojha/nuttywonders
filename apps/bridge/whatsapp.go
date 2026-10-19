@@ -249,15 +249,32 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 	if phone == "" {
 		return
 	}
+	messageType := "text"
+	paymentReviewStatus := ""
+	if strings.TrimSpace(body) == "" {
+		if evt.Message.GetImageMessage() == nil {
+			return
+		}
+		messageType = "image"
+		body = "[Image received — review this as possible payment proof]"
+		paymentReviewStatus = "pending"
+	} else if containsPaymentProofLanguage(body) {
+		paymentReviewStatus = "pending"
+	}
 
 	logCtx, cancelLog := context.WithTimeout(context.Background(), 15*time.Second)
-	_ = w.db.Insert(logCtx, "whatsapp_messages", map[string]any{
+	message := map[string]any{
 		"direction":   "in",
 		"phone_e164":  phone,
 		"body":        body,
 		"message_key": evt.Info.ID,
 		"status":      "received",
-	}, nil)
+		"message_type": messageType,
+	}
+	if paymentReviewStatus != "" {
+		message["payment_review_status"] = paymentReviewStatus
+	}
+	_ = w.db.Insert(logCtx, "whatsapp_messages", message, nil)
 	cancelLog()
 
 	if cli != nil {
@@ -272,6 +289,13 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 	replyCtx, cancelReply := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelReply()
 	w.inbound(replyCtx, phone, body)
+}
+
+func containsPaymentProofLanguage(body string) bool {
+	lower := strings.ToLower(body)
+	return strings.Contains(lower, "paid") || strings.Contains(lower, "payment") ||
+		strings.Contains(lower, "screenshot") || strings.Contains(lower, "transaction") ||
+		strings.Contains(lower, "utr")
 }
 
 func phoneFromJID(jid types.JID) string {

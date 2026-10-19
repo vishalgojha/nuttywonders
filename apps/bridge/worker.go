@@ -21,6 +21,10 @@ func (s *Server) runJobWorker(ctx context.Context) {
 		case <-time.After(s.cfg.PollInterval):
 		}
 
+		if err := s.runScheduledBroadcasts(ctx); err != nil {
+			s.log.Warn("scheduled broadcasts failed", "error", err)
+		}
+
 		sent, err := s.drainQueue(ctx)
 		if err != nil {
 			if ctx.Err() != nil {
@@ -33,6 +37,23 @@ func (s *Server) runJobWorker(ctx context.Context) {
 			s.log.Info("job worker sent messages", "count", sent)
 		}
 	}
+}
+
+func (s *Server) runScheduledBroadcasts(ctx context.Context) error {
+	query := url.Values{}
+	query.Set("select", "id,title,body,segment,status,audience_count,sent_count,created_at,sent_at,scheduled_at")
+	query.Set("status", "eq.draft")
+	query.Set("scheduled_at", "lte."+time.Now().UTC().Format(time.RFC3339))
+	query.Set("limit", "20")
+	var broadcasts []Broadcast
+	if err := s.db.Select(ctx, "broadcasts", query, &broadcasts); err != nil { return err }
+	for i := range broadcasts {
+		recipients, err := s.broadcastAudience(ctx, broadcasts[i].Segment)
+		if err != nil { return err }
+		if len(recipients) == 0 { continue }
+		if err := s.queueBroadcast(ctx, &broadcasts[i], recipients); err != nil { return err }
+	}
+	return nil
 }
 
 func (s *Server) drainQueue(ctx context.Context) (int, error) {
