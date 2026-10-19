@@ -35,6 +35,13 @@ const state = {
   current: null,
   filter: 'all',
   moment: 'all',
+  query: '',
+};
+
+const BUNDLES = {
+  breakfast: ['chocolate-granola', 'berries-granola', 'apple-cinnamon-granola'],
+  chai: ['cocoa-ragi-bites', 'oats-bites', 'crunchy-munchy-snack'],
+  gifting: ['berries-granola', 'dates-nuts-bites', 'cashew-truffles'],
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -59,9 +66,12 @@ function renderProducts() {
   const categoryList = state.filter === 'all'
     ? state.products
     : state.products.filter((p) => p.category === state.filter);
-  const list = state.moment === 'all'
+  const momentList = state.moment === 'all'
     ? categoryList
     : categoryList.filter((product) => productMatchesMoment(product, state.moment));
+  const list = state.query
+    ? momentList.filter((product) => productMatchesQuery(product, state.query))
+    : momentList;
 
   $('#product-count').textContent = `${list.length} snack${list.length === 1 ? '' : 's'}`;
   $('#product-grid').innerHTML = list.map((product) => `
@@ -106,6 +116,11 @@ function productMatchesMoment(product, moment) {
   return true;
 }
 
+function productMatchesQuery(product, query) {
+  const text = `${product.name || ''} ${product.tagline || ''} ${product.description || ''} ${product.category || ''} ${(product.ingredients || []).join(' ')}`.toLowerCase();
+  return text.includes(query.trim().toLowerCase());
+}
+
 function openModal(product) {
   if (!product) return;
   state.current = product;
@@ -116,6 +131,12 @@ function openModal(product) {
   $('#modal-visual').innerHTML = visualFor(product);
   $('#modal-price').textContent = money(product.price_inr);
   $('#modal-pack').textContent = `${packLabel(product.pack_size_g)} pack`;
+  $('#modal-qty').value = '1';
+  $('#modal-qty').textContent = '1';
+  $('#modal-details').innerHTML = [
+    ...productBenefits(product).map((tag) => `<span>${escapeHtml(tag)}</span>`),
+    product.shelf_life_days ? `<span>Best enjoyed within ${product.shelf_life_days} days</span>` : '',
+  ].join('');
 
   const ingredients = $('#modal-ingredients');
   ingredients.innerHTML = '';
@@ -135,28 +156,35 @@ function openModal(product) {
   $('#modal-backdrop').classList.add('open');
 }
 
-function addToCart(product) {
+function addToCart(product, quantity = 1) {
   if (!product) return;
   const line = state.cart.find((item) => String(item.id) === String(product.id));
-  if (line) line.qty += 1;
-  else state.cart.push({ id: product.id, qty: 1 });
+  const safeQuantity = Math.max(1, Math.min(20, Number(quantity) || 1));
+  if (line) line.qty += safeQuantity;
+  else state.cart.push({ id: product.id, qty: safeQuantity });
   saveCart();
   renderCart();
   toast(`${product.name} added to your bag`);
 }
 
 function addBundle(key) {
-  const bundles = {
-    breakfast: ['chocolate-granola', 'berries-granola', 'apple-cinnamon-granola'],
-    chai: ['cocoa-ragi-bites', 'oats-bites', 'crunchy-munchy-snack'],
-    gifting: ['berries-granola', 'dates-nuts-bites', 'cashew-truffles'],
-  };
-  const selected = (bundles[key] || []).map((slug) => state.products.find((product) => product.slug === slug)).filter(Boolean);
+  const selected = (BUNDLES[key] || []).map((slug) => state.products.find((product) => product.slug === slug)).filter(Boolean);
   selected.forEach((product) => addToCart(product));
   if (selected.length) {
     renderCart();
     $('#cart-drawer').classList.add('open');
   }
+}
+
+function renderBundleTotals() {
+  Object.entries(BUNDLES).forEach(([key, slugs]) => {
+    const total = slugs.reduce((sum, slug) => {
+      const product = state.products.find((item) => item.slug === slug);
+      return sum + Number(product?.price_inr || 0);
+    }, 0);
+    const element = document.querySelector(`[data-bundle-total="${key}"]`);
+    if (element && total) element.textContent = `${slugs.length} snacks · ${money(total)}`;
+  });
 }
 
 function saveCart() {
@@ -453,15 +481,42 @@ function wireEvents() {
     renderProducts();
   }));
   $$('.bundle-add').forEach((button) => button.addEventListener('click', () => addBundle(button.dataset.bundle)));
+  $('.search-toggle').addEventListener('click', () => {
+    const panel = $('#search-panel');
+    panel.hidden = false;
+    $('#site-search').focus();
+  });
+  $('#search-close').addEventListener('click', () => {
+    $('#search-panel').hidden = true;
+    state.query = '';
+    $('#site-search').value = '';
+    renderProducts();
+  });
+  $('#site-search').addEventListener('input', (event) => {
+    state.query = event.target.value;
+    renderProducts();
+    $('#search-note').textContent = state.query ? `${$('#product-count').textContent} matching snacks` : 'Search by snack, ingredient or category.';
+  });
+  $('#site-search').addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') $('#search-close').click();
+  });
 
   $('#modal-close').addEventListener('click', () => $('#modal-backdrop').classList.remove('open'));
   $('#modal-backdrop').addEventListener('click', (event) => {
     if (event.target.id === 'modal-backdrop') event.currentTarget.classList.remove('open');
   });
   $('#modal-add').addEventListener('click', () => {
-    addToCart(state.current);
+    addToCart(state.current, Number($('#modal-qty').textContent));
     $('#modal-backdrop').classList.remove('open');
     $('#cart-drawer').classList.add('open');
+  });
+  $('#modal-qty-minus').addEventListener('click', () => {
+    const output = $('#modal-qty');
+    output.textContent = String(Math.max(1, Number(output.textContent) - 1));
+  });
+  $('#modal-qty-plus').addEventListener('click', () => {
+    const output = $('#modal-qty');
+    output.textContent = String(Math.min(20, Number(output.textContent) + 1));
   });
 
   $('#cart-open').addEventListener('click', () => {
@@ -592,6 +647,7 @@ async function init() {
   }
 
   renderProducts();
+  renderBundleTotals();
   renderCart();
   $('#order-lookup-form').addEventListener('submit', loadTrackOrder);
 }

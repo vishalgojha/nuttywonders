@@ -111,3 +111,12 @@
 .bundle-gifting{background:#b77b52;color:#fff8df}
 @media(max-width:900px){.bundle-section{padding-left:6vw;padding-right:6vw}.bundle-grid{grid-template-columns:1fr 1fr}.bundle-card:last-child{grid-column:span 2}}
 @media(max-width:650px){.moment-row{margin:-10px 0 25px;flex-wrap:nowrap;overflow:auto;padding-bottom:12px}.moment-label{flex:none}.moment{flex:none}.bundle-section{padding:0 5vw 75px}.bundle-grid{display:block}.bundle-card{min-height:205px;margin-bottom:12px}.bundle-card:last-child{margin-bottom:0}.benefit-tags{gap:4px}.benefit-tags span{font-size:8px;padding:3px 6px}}
+.search-panel{position:fixed;z-index:25;inset:78px 0 auto;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 10px 25px rgba(31,48,15,.12)}
+.search-inner{max-width:760px;margin:0 auto;padding:22px 5vw;display:grid;grid-template-columns:1fr auto;gap:8px 16px;position:relative}
+.search-inner label{grid-column:1/-1;text-transform:uppercase;letter-spacing:.12em;color:#7f8877;font-size:10px;font-weight:700}
+.search-inner input{grid-column:1/-1;border:0;border-bottom:1px solid var(--line);background:transparent;padding:7px 36px 12px 0;outline:0;color:var(--ink);font-size:22px;font-family:var(--serif)}
+.search-inner small{color:#899182;font-size:10px}.search-close{position:absolute;right:5vw;top:52px;border:0;background:none;color:var(--ink);font-size:27px;cursor:pointer}
+.modal-details{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0 4px}.modal-details span{border:1px solid #ccd1c5;border-radius:20px;padding:6px 9px;color:#6f796c;font-size:10px}
+.modal-actions{display:flex;align-items:center;gap:14px}.quantity-control{display:flex;align-items:center;border:1px solid var(--line);height:46px}.quantity-control button{border:0;background:none;width:30px;height:100%;font-size:18px;cursor:pointer;color:var(--ink)}.quantity-control output{min-width:22px;text-align:center;font-size:12px}
+.bundle-total{display:block;margin:-12px 0 20px;font-size:11px;font-weight:700;opacity:.72}
+@media(max-width:650px){.search-panel{inset:64px 0 auto}.search-inner{padding:18px 5vw}.search-close{right:5vw;top:44px}.modal-actions{align-items:stretch;flex-direction:column;gap:10px}.quantity-control{height:40px}.quantity-control button{width:42px}.modal-actions .button{justify-content:center}}
