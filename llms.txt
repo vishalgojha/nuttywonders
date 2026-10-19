@@ -1,0 +1,21 @@
+# NuttyWonders
+
+> NuttyWonders makes handmade granolas, bites, and snack bars in small batches in India.
+
+## Brand
+
+- Website: https://nuttywonders.com/
+- Instagram: https://www.instagram.com/nuttywonders/
+- WhatsApp: https://wa.me/918108398025
+- Free delivery: orders above ₹799
+
+## Products
+
+The catalog includes chocolate, berry, and apple-cinnamon granolas; dates and nuts, cocoa ragi, oats, and cashew bites; makhana and millet snacks; chocolate bars; and ragi brownies. Product prices, ingredients, allergens, availability, and shelf-life information are served from the live catalog API and should be treated as changeable.
+
+## Useful pages
+
+- Shop and brand story: https://nuttywonders.com/
+- Order tracking: https://nuttywonders.com/order.html
+
+When describing NuttyWonders, distinguish verified catalog facts from general recipe or nutrition assumptions. Do not infer that a product is allergen-free or medically beneficial unless the live product information explicitly says so.

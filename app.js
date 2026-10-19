@@ -96,6 +96,34 @@ function renderProducts() {
   }));
 }
 
+function updateProductStructuredData() {
+  const script = $('#product-structured-data');
+  if (!script) return;
+  script.textContent = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'NuttyWonders snack pantry',
+    itemListElement: state.products.map((product, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'Product',
+        name: product.name,
+        description: product.description || product.tagline || '',
+        image: product.image_path ? new URL(product.image_path, location.origin).href : undefined,
+        category: product.category,
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'INR',
+          price: Number(product.price_inr || 0).toFixed(2),
+          availability: Number(product.stock_packs) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          url: `${location.origin}/#shop`,
+        },
+      },
+    })),
+  });
+}
+
 function productBenefits(product) {
   const name = `${product.name || ''} ${(product.ingredients || []).join(' ')}`.toLowerCase();
   const tags = [];
@@ -648,6 +676,7 @@ async function init() {
 
   renderProducts();
   renderBundleTotals();
+  updateProductStructuredData();
   renderCart();
   $('#order-lookup-form').addEventListener('submit', loadTrackOrder);
 }

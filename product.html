@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NuttyWonders product</title>
+  <meta name="description" content="Explore a NuttyWonders small-batch snack." />
+  <link rel="canonical" id="product-canonical" href="https://nuttywonders.com/products/" />
+  <meta property="og:type" content="product" />
+  <meta property="og:site_name" content="NuttyWonders" />
+  <meta property="og:title" id="product-og-title" content="NuttyWonders product" />
+  <meta property="og:description" id="product-og-description" content="Explore a NuttyWonders small-batch snack." />
+  <meta property="og:image" id="product-og-image" content="https://nuttywonders.com/assets/brand-slice.webp" />
+  <link rel="stylesheet" href="/styles.css?v=20261019-2" />
+  <style>
+    .product-page{max-width:1120px;margin:0 auto;padding:90px 6vw 120px}.product-page-header{display:flex;justify-content:space-between;gap:30px;align-items:center;margin-bottom:40px}.product-page-header .brand-logo{width:82px}.product-back{font-size:12px;font-weight:700;border-bottom:1px solid var(--line);padding-bottom:5px}.product-detail{display:grid;grid-template-columns:1fr 1fr;gap:7vw;align-items:center}.product-detail-image{min-height:540px;background:#e7e3d6;display:grid;place-items:center}.product-detail-image img{width:100%;height:100%;object-fit:cover}.product-detail-copy h1{font-family:var(--serif);font-size:clamp(42px,5vw,72px);line-height:.98;letter-spacing:-.055em;margin:0 0 18px}.product-detail-copy>p:not(.eyebrow){color:#6e786d;line-height:1.75;max-width:460px}.product-detail-meta{display:flex;flex-wrap:wrap;gap:7px;margin:25px 0}.product-detail-meta span{border:1px solid var(--line);border-radius:30px;padding:7px 10px;color:#6f796c;font-size:10px}.product-detail-price{font-size:24px;font-weight:700;margin:25px 0}.product-detail-link{display:inline-flex;margin-top:25px}.product-loading{color:#748071}.product-error{padding:30px;border:1px solid var(--line);color:#748071}@media(max-width:650px){.product-page{padding:45px 5vw 75px}.product-page-header{margin-bottom:25px}.product-detail{display:flex;flex-direction:column;gap:35px;align-items:stretch}.product-detail-image{min-height:360px}.product-detail-copy h1{font-size:47px}}
+  </style>
+</head>
+<body>
+  <div class="announcement">Made in small batches with clean, feel-good ingredients <span>✦</span> Free delivery above ₹799</div>
+  <main class="product-page" id="product-page">
+    <header class="product-page-header"><a href="/" aria-label="NuttyWonders home"><img class="brand-logo" src="/assets/nuttywonders-logo.png" alt="NuttyWonders" /></a><a class="product-back" href="/#shop">← Back to the pantry</a></header>
+    <p class="product-loading" id="product-loading">Loading this small-batch good thing…</p>
+    <article class="product-detail" id="product-detail" hidden>
+      <div class="product-detail-image" id="product-image"></div>
+      <div class="product-detail-copy"><p class="eyebrow" id="product-category"></p><h1 id="product-name"></h1><p id="product-description"></p><div class="product-detail-meta" id="product-meta"></div><div class="product-detail-price" id="product-price"></div><a class="button button-dark product-detail-link" href="/#shop">Shop the pantry <span>↗</span></a></div>
+    </article>
+    <p class="product-error" id="product-error" hidden>We couldn’t find that snack. <a href="/#shop">Return to the pantry.</a></p>
+  </main>
+  <script src="/product.js"></script>
+</body>
+</html>
