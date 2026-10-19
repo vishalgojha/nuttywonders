@@ -118,6 +118,11 @@
 .qr-frame svg{width:100%;height:100%;display:block}
 .qr-error{margin:0;color:#a8452c;font-size:11px;text-align:center}
 .qr-box small{color:#7f8877;font-size:10px;text-align:center}
+.qr-loading{width:200px;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:var(--moss)}
+.qr-loading strong{font:600 15px var(--serif);color:var(--ink)}
+.qr-loading small{max-width:175px;line-height:1.5}
+.qr-spinner{width:28px;height:28px;border:3px solid #dfe6d6;border-top-color:var(--orange);border-radius:50%;animation:qr-spin .9s linear infinite}
+@keyframes qr-spin{to{transform:rotate(360deg)}}
 .journal-admin-list{margin-top:22px}.journal-admin-row{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--line);padding:17px 0}.journal-admin-row strong{font:600 18px var(--serif);display:block}.journal-admin-row small{display:block;color:#8c9586;font-size:11px;margin-top:5px}
 .checkbox{display:flex;flex-direction:row;align-items:center;gap:9px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:400}
 .checkbox input{width:15px;height:15px}

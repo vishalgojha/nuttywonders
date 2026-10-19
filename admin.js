@@ -777,9 +777,13 @@ function renderWhatsApp() {
     qrBox.innerHTML = pairingQr(wa.qr_code) +
       '<small>Expires in about 20 seconds — it refreshes on its own.</small>';
     openPairingLightbox(wa.qr_code);
+  } else if (!connected && wa.status === 'pairing') {
+    qrBox.hidden = false;
+    qrBox.innerHTML = '<div class="qr-loading"><span class="qr-spinner" aria-hidden="true"></span><strong>Preparing a fresh QR…</strong><small>Keep this page open. The code will appear here automatically.</small></div>';
+    closePairingLightbox();
   } else {
     qrBox.hidden = true;
-    if (connected || $('#pairing-lightbox').classList.contains('open')) closePairingLightbox();
+    closePairingLightbox();
   }
 }
 
