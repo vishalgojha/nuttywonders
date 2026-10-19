@@ -482,7 +482,8 @@ function openProductForm(slug) {
   $('#product-modal .modal-card').scrollTop = 0;
   $('#product-modal').classList.add('open');
   $('#form-title').textContent = product ? `Edit ${product.name}` : 'Add a product';
-  $('#product-id').value = product?.slug || '';
+  $('#product-id').value = product?.id || '';
+  $('#product-slug').value = product?.slug || '';
   $('#name').value = product?.name || '';
   $('#tagline').value = product?.tagline || '';
   $('#category').value = product?.category || 'granola';
@@ -510,7 +511,7 @@ async function submitProduct(event) {
   const body = {
     name: $('#name').value.trim(),
     tagline: $('#tagline').value.trim(),
-    slug,
+    slug: $('#product-slug').value.trim(),
     category: $('#category').value,
     pack_size_g: Number($('#pack').value) || 200,
     price_inr: Number($('#price').value) || 0,
@@ -524,6 +525,7 @@ async function submitProduct(event) {
     cost_overhead_inr: Number($('#overhead-cost').value) || 0,
     is_active: $('#active').checked,
   };
+  if (slug) body.id = Number(slug);
 
   try {
     await api('/admin/products', { method: 'POST', body });

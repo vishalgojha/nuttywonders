@@ -78,6 +78,7 @@ func (s *Server) handleAdminListProducts(w http.ResponseWriter, r *http.Request,
 }
 
 type productInput struct {
+	ID                *int64   `json:"id"`
 	Name              string   `json:"name"`
 	Slug              string   `json:"slug"`
 	Tagline           *string  `json:"tagline"`
