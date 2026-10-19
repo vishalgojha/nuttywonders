@@ -407,6 +407,11 @@ function wireEvents() {
   $('#checkout').addEventListener('click', openCheckout);
   $('#checkout-close').addEventListener('click', () => $('#checkout-drawer').classList.remove('open'));
   $('#checkout-form').addEventListener('submit', submitCheckout);
+  $('#checkout-form-panel').addEventListener('focusin', (event) => {
+    if (!event.target.matches('input, textarea, select')) return;
+    // Keep the active field visible when a mobile keyboard reduces the viewport.
+    requestAnimationFrame(() => event.target.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+  });
 
   $('#newsletter-form').addEventListener('submit', (event) => {
     event.preventDefault();

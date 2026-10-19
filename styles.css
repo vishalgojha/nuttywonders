@@ -57,6 +57,13 @@
   .cart-drawer>.cart-head{flex:none}
   #checkout-form-panel,#checkout-done-panel{flex:1 1 0%;min-height:0;max-height:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;touch-action:pan-y}
 }
+/* Keep checkout predictable on short desktop windows, tablets and phones.
+   The drawer header stays fixed while this single panel owns all form scroll. */
+.checkout-drawer{height:100dvh;max-height:100dvh;min-height:0}
+.checkout-drawer>.cart-head{flex:0 0 auto}
+.checkout-drawer #checkout-form-panel,
+.checkout-drawer #checkout-done-panel{flex:1 1 0%;min-height:0;max-height:none;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:16px;-webkit-overflow-scrolling:touch}
+.checkout-drawer .checkout-form{padding-bottom:max(20px, env(safe-area-inset-bottom))}
 .track-steps{display:flex;gap:0;margin:22px 0;border-top:1px solid var(--line);padding-top:16px}
 .track-step{flex:1;display:flex;flex-direction:column;gap:7px;position:relative}
 .track-step span{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--line);background:#fff}
