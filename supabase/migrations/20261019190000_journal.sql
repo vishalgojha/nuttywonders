@@ -29,7 +29,9 @@ for each row execute function public.set_journal_articles_updated_at();
 alter table public.journal_articles enable row level security;
 drop policy if exists journal_articles_admin_all on public.journal_articles;
 create policy journal_articles_admin_all on public.journal_articles
-for all using (public.is_admin()) with check (public.is_admin());
+for all to authenticated
+using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
+with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 insert into public.journal_articles
   (slug, title, eyebrow, category, excerpt, body, image_path, is_published, published_at)
