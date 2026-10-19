@@ -232,6 +232,9 @@ func (a *AdminAuth) sendEmail(ctx context.Context, path, email, redirectTo strin
 	if strings.ToLower(strings.TrimSpace(email)) != adminOwnerEmail {
 		return errBadCredentials
 	}
+	if err := a.ensureOwner(ctx); err != nil {
+		return err
+	}
 	body := map[string]any{"email": adminOwnerEmail, "redirect_to": redirectTo}
 	if path == "/otp" {
 		body["create_user"] = false
@@ -247,6 +250,31 @@ func (a *AdminAuth) sendEmail(ctx context.Context, path, email, redirectTo strin
 		return fmt.Errorf("auth email failed with status %d", status)
 	}
 	return nil
+}
+
+// ensureOwner makes the first-link flow usable even when the new owner email
+// has not been created in Supabase yet. It never assigns a password; the
+// recovery link is the only way the owner can establish one.
+func (a *AdminAuth) ensureOwner(ctx context.Context) error {
+	body := map[string]any{
+		"email":         adminOwnerEmail,
+		"email_confirm": true,
+		"app_metadata":  map[string]string{"role": "admin"},
+	}
+	raw, status, err := a.postAuth(ctx, "/admin/users", body)
+	if err != nil {
+		return err
+	}
+	if status >= 200 && status < 300 || status == http.StatusUnprocessableEntity {
+		return nil
+	}
+	if status == http.StatusForbidden {
+		return fmt.Errorf("auth service key cannot create the owner account")
+	}
+	if raw != "" {
+		return fmt.Errorf("owner account setup failed with status %d", status)
+	}
+	return fmt.Errorf("owner account setup failed with status %d", status)
 }
 
 func (a *AdminAuth) updatePassword(ctx context.Context, accessToken, password string) error {
