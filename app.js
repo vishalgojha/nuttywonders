@@ -599,12 +599,6 @@ function wireEvents() {
     requestAnimationFrame(() => event.target.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
   });
 
-  $('#newsletter-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    $('#newsletter-note').textContent = 'You’re on the list. Welcome to the good stuff!';
-    event.target.reset();
-  });
-
   $('#menu-toggle').addEventListener('click', () => {
     const nav = $('.desktop-nav');
     const open = nav.style.display === 'flex';
