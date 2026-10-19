@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
   <!-- Version the Studio stylesheet so an older service-worker/browser cache
        cannot leave the login screen rendered as unstyled HTML. -->
-  <link rel="stylesheet" href="/admin.css?v=20261019-2" />
+  <link rel="stylesheet" href="/admin.css?v=20261019-3" />
 </head>
 <body>
   <div class="login-screen" id="login-screen">
@@ -50,6 +50,7 @@
         <a class="active" href="#overview">◈ <span>Overview</span></a>
         <a href="#orders">▤ <span>Orders</span><b id="nav-order-count">0</b></a>
         <a href="#products">▣ <span>Products</span></a>
+        <a href="#customers">♙ <span>Customers</span></a>
         <a href="#messages">✉ <span>Messages</span></a>
         <a href="#broadcast">✦ <span>Broadcast</span></a>
         <a href="#whatsapp">✆ <span>WhatsApp</span></a>
@@ -65,12 +66,19 @@
         <div class="top-actions"><span class="sync" id="sync-state"><i></i> Synced</span><button class="avatar">K</button></div>
       </header>
 
-      <section class="stats" id="overview">
+      <section id="overview" class="overview-page">
+        <div class="stats">
         <article><span>Orders</span><strong id="stat-orders">0</strong><small><span id="stat-new">0</span> waiting on you</small></article>
         <article><span>Live products</span><strong id="stat-products">0</strong><small>On your storefront</small></article>
         <article><span>Average margin</span><strong id="stat-margin">0%</strong><small>Across costed products</small></article>
         <article><span>Pending payments</span><strong id="stat-pending">0</strong><small>Awaiting online payment</small></article>
         <article class="accent"><span>WhatsApp queue</span><strong id="stat-queue">0</strong><small id="stat-jid">Not linked yet</small></article>
+        </div>
+        <div class="overview-grid">
+          <div class="panel attention-panel"><div class="panel-head"><div><p class="eyebrow">Action centre</p><h2>Needs attention</h2></div><span class="attention-count" id="attention-count">0</span></div><div id="attention-list" class="attention-list"></div></div>
+          <div class="panel quick-panel"><div class="panel-head"><div><p class="eyebrow">Shortcuts</p><h2>Quick actions</h2></div></div><div class="quick-actions"><button class="button button-dark" id="overview-new-order">+ New order</button><button class="button button-ghost" id="overview-new-product">+ Add product</button><button class="button button-ghost" data-go-section="settings">Delivery & discounts</button></div></div>
+        </div>
+        <div class="panel recent-panel"><div class="panel-head"><div><p class="eyebrow">Latest activity</p><h2>Recent orders</h2></div><button class="button button-ghost" data-go-section="orders">View all orders</button></div><div id="recent-orders" class="recent-orders"></div></div>
       </section>
 
       <section class="panel" id="orders">
@@ -95,6 +103,11 @@
           </div>
         </div>
         <div class="product-list" id="product-list"></div>
+      </section>
+
+      <section class="panel" id="customers">
+        <div class="panel-head"><div><p class="eyebrow">Your community</p><h2>Customers</h2></div><label class="search customer-search"><span>⌕</span><input id="customer-search" placeholder="Name, phone or email" /></label></div>
+        <div class="customer-list" id="customer-list"></div>
       </section>
 
       <section class="panel" id="messages">
@@ -183,7 +196,7 @@
   </div></div>
 
   <div class="toast" id="toast"></div>
-  <script src="/qr.js?v=20261019-2"></script>
-  <script src="/admin.js?v=20261019-2"></script>
+  <script src="/qr.js?v=20261019-3"></script>
+  <script src="/admin.js?v=20261019-3"></script>
 </body>
 </html>

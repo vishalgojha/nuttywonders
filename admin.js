@@ -1,6 +1,7 @@
 const state = {
   products: [],
   orders: [],
+  customers: [],
   broadcasts: [],
   settings: {},
   dashboard: null,
@@ -186,10 +187,11 @@ async function signOut() {
 
 async function refreshAll() {
   try {
-    const [dashboard, products, orders, broadcasts, settings, wa] = await Promise.all([
+    const [dashboard, products, orders, customers, broadcasts, settings, wa] = await Promise.all([
       api('/admin/dashboard'),
       api('/admin/products'),
       api('/admin/orders'),
+      api('/admin/customers'),
       api('/admin/broadcasts'),
       api('/admin/settings'),
       api('/admin/whatsapp'),
@@ -197,13 +199,16 @@ async function refreshAll() {
     state.dashboard = dashboard;
     state.products = products.products || [];
     state.orders = orders.orders || [];
+    state.customers = customers.customers || [];
     state.broadcasts = broadcasts.broadcasts || [];
     state.settings = settings.settings || {};
     state.wa = wa;
 
     renderStats();
+    renderOverview();
     renderOrders();
     renderProducts();
+    renderCustomers();
     renderBroadcasts();
     renderSettings();
     renderWhatsApp();
@@ -232,6 +237,37 @@ function renderStats() {
     : '0%';
 
   if (state.wa?.jid) $('#stat-jid').textContent = state.wa.jid;
+}
+
+function renderOverview() {
+  const attention = [];
+  const newOrders = state.orders.filter((order) => order.status === 'new').length;
+  const pendingPayments = state.orders.filter((order) => order.payment_status === 'pending' && order.status !== 'cancelled').length;
+  const lowStock = state.products.filter((product) => product.is_active && Number(product.stock_packs) <= 5).length;
+  if (newOrders) attention.push({ tone: 'orange', title: `${newOrders} new order${newOrders === 1 ? '' : 's'} waiting`, note: 'Review and confirm customer orders.', action: 'orders' });
+  if (pendingPayments) attention.push({ tone: 'yellow', title: `${pendingPayments} payment${pendingPayments === 1 ? '' : 's'} pending`, note: 'Check payment status before packing.', action: 'orders' });
+  if (lowStock) attention.push({ tone: 'sage', title: `${lowStock} product${lowStock === 1 ? '' : 's'} low on stock`, note: 'Restock products with five packs or fewer.', action: 'products' });
+  if (state.wa?.status !== 'connected') attention.push({ tone: 'yellow', title: 'WhatsApp is not connected', note: 'Link WhatsApp for order updates.', action: 'whatsapp' });
+  $('#attention-count').textContent = attention.length;
+  $('#attention-list').innerHTML = attention.length ? attention.map((item) => `<button class="attention-item ${item.tone}" data-go-section="${item.action}"><span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.note)}</small></span><b>→</b></button>`).join('') : '<div class="attention-empty">Everything is under control ✦</div>';
+
+  const recent = state.orders.slice(0, 5);
+  $('#recent-orders').innerHTML = recent.length ? recent.map((order) => `<button class="recent-order" data-go-section="orders"><span><strong>${escapeHtml(order.customer_name || 'Customer')}</strong><small>${escapeHtml(order.code)} · ${formatWhen(order.created_at)}</small></span><b>${money(order.total_inr)}</b><em class="tag status-${escapeHtml(order.status)}">${escapeHtml(statusLabel(order.status))}</em></button>`).join('') : '<div class="attention-empty">No orders yet.</div>';
+  bindSectionLinks();
+}
+
+function renderCustomers() {
+  const term = ($('#customer-search')?.value || '').trim().toLowerCase();
+  const customers = state.customers.filter((customer) => !term || [customer.name, customer.phone_e164, customer.email, customer.city].some((value) => String(value || '').toLowerCase().includes(term)));
+  $('#customer-list').innerHTML = customers.length ? customers.map((customer) => `<div class="customer-row"><div><strong>${escapeHtml(customer.name || 'Unnamed customer')}</strong><small>${escapeHtml(customer.phone_e164)}${customer.email ? ` · ${escapeHtml(customer.email)}` : ''}</small></div><span>${escapeHtml(customer.city || 'City not added')}</span><em class="tag">${customer.marketing_opt_in ? 'Opted in' : 'No marketing'}</em></div>`).join('') : '<div class="empty">No customers match this search.</div>';
+}
+
+function bindSectionLinks() {
+  $$('[data-go-section]').forEach((link) => {
+    if (link.dataset.bound) return;
+    link.dataset.bound = '1';
+    link.addEventListener('click', () => showSection(link.dataset.goSection));
+  });
 }
 
 function unitCost(product) {
@@ -695,7 +731,7 @@ async function pollWhatsApp() {
 
 // --- section views -----------------------------------------------------------
 // The sidebar switches between full views instead of scrolling one long page.
-const SECTIONS = ['overview', 'orders', 'products', 'messages', 'broadcast', 'whatsapp', 'settings'];
+const SECTIONS = ['overview', 'orders', 'products', 'customers', 'messages', 'broadcast', 'whatsapp', 'settings'];
 
 function showSection(id) {
   SECTIONS.forEach((name) => {
@@ -721,6 +757,9 @@ function wire() {
   $('#search').addEventListener('input', renderProducts);
   $('#category-filter').addEventListener('change', renderProducts);
   $('#new-product').addEventListener('click', () => openProductForm());
+  $('#overview-new-order').addEventListener('click', openNewOrder);
+  $('#overview-new-product').addEventListener('click', () => openProductForm());
+  $('#customer-search').addEventListener('input', renderCustomers);
   $('#close-modal').addEventListener('click', () => $('#product-modal').classList.remove('open'));
   $('#cancel-form').addEventListener('click', () => $('#product-modal').classList.remove('open'));
   $('#product-form').addEventListener('submit', submitProduct);
@@ -775,6 +814,7 @@ function wire() {
   }));
   const initial = (location.hash || '#overview').slice(1);
   showSection(SECTIONS.includes(initial) ? initial : 'overview');
+  bindSectionLinks();
 }
 
 async function init() {
