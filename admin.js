@@ -3,6 +3,7 @@ const state = {
   orders: [],
   customers: [],
   broadcasts: [],
+  journal: [],
   settings: {},
   dashboard: null,
   wa: null,
@@ -206,12 +207,13 @@ async function signOut() {
 
 async function refreshAll() {
   try {
-    const [dashboard, products, orders, customers, broadcasts, settings, wa] = await Promise.all([
+    const [dashboard, products, orders, customers, broadcasts, journal, settings, wa] = await Promise.all([
       api('/admin/dashboard'),
       api('/admin/products'),
       api('/admin/orders'),
       api('/admin/customers'),
       api('/admin/broadcasts'),
+      api('/admin/journal'),
       api('/admin/settings'),
       api('/admin/whatsapp'),
     ]);
@@ -220,6 +222,7 @@ async function refreshAll() {
     state.orders = orders.orders || [];
     state.customers = customers.customers || [];
     state.broadcasts = broadcasts.broadcasts || [];
+    state.journal = journal.articles || [];
     state.settings = settings.settings || {};
     state.wa = wa;
 
@@ -229,12 +232,50 @@ async function refreshAll() {
     renderProducts();
     renderCustomers();
     renderBroadcasts();
+    renderJournal();
     renderSettings();
     renderWhatsApp();
     $('#sync-state').innerHTML = '<i></i> Synced';
   } catch (err) {
     $('#sync-state').textContent = err.message;
   }
+}
+
+function renderJournal() {
+  const list = $('#journal-list');
+  if (!list) return;
+  list.innerHTML = state.journal.length ? state.journal.map((article) => `<div class="journal-admin-row"><div><strong>${escapeHtml(article.title)}</strong><small>${escapeHtml(article.category)} · ${article.is_published ? 'Published' : 'Draft'} · ${formatWhen(article.updated_at)}</small></div><button class="button button-ghost" data-edit-journal="${article.id}">Edit</button></div>`).join('') : '<div class="empty">No articles yet. Add your first snack note.</div>';
+  $$('[data-edit-journal]').forEach((button) => button.addEventListener('click', () => openJournalForm(button.dataset.editJournal)));
+}
+
+function openJournalForm(id = '') {
+  const article = state.journal.find((item) => String(item.id) === String(id));
+  $('#journal-form').reset();
+  $('#journal-id').value = article?.id || '';
+  $('#journal-form-title').textContent = article ? 'Edit article' : 'New article';
+  $('#journal-title').value = article?.title || '';
+  $('#journal-eyebrow').value = article?.eyebrow || 'Snack notes';
+  $('#journal-category').value = article?.category || 'Snack notes';
+  $('#journal-slug').value = article?.slug || '';
+  $('#journal-image').value = article?.image_path || '';
+  $('#journal-excerpt').value = article?.excerpt || '';
+  $('#journal-body').value = article?.body || '';
+  $('#journal-published').checked = Boolean(article?.is_published);
+  $('#journal-modal').classList.add('open');
+}
+
+async function submitJournal(event) {
+  event.preventDefault();
+  try {
+    await api('/admin/journal', { method: 'POST', body: {
+      id: Number($('#journal-id').value || 0), slug: $('#journal-slug').value.trim(), title: $('#journal-title').value.trim(),
+      eyebrow: $('#journal-eyebrow').value.trim(), category: $('#journal-category').value.trim(), image_path: $('#journal-image').value.trim(),
+      excerpt: $('#journal-excerpt').value.trim(), body: $('#journal-body').value.trim(), is_published: $('#journal-published').checked,
+    }});
+    $('#journal-modal').classList.remove('open');
+    toast('Article saved');
+    await refreshAll();
+  } catch (err) { toast(err.message); }
 }
 
 function renderStats() {
@@ -768,7 +809,7 @@ async function pollWhatsApp() {
 
 // --- section views -----------------------------------------------------------
 // The sidebar switches between full views instead of scrolling one long page.
-const SECTIONS = ['overview', 'orders', 'products', 'customers', 'messages', 'broadcast', 'whatsapp', 'settings'];
+const SECTIONS = ['overview', 'orders', 'products', 'customers', 'journal', 'messages', 'broadcast', 'whatsapp', 'settings'];
 
 function showSection(id) {
   SECTIONS.forEach((name) => {
@@ -797,6 +838,10 @@ function wire() {
   $('#overview-new-order').addEventListener('click', openNewOrder);
   $('#overview-new-product').addEventListener('click', () => openProductForm());
   $('#customer-search').addEventListener('input', renderCustomers);
+  $('#new-journal').addEventListener('click', () => openJournalForm());
+  $('#close-journal-modal').addEventListener('click', () => $('#journal-modal').classList.remove('open'));
+  $('#cancel-journal').addEventListener('click', () => $('#journal-modal').classList.remove('open'));
+  $('#journal-form').addEventListener('submit', submitJournal);
   $('#close-modal').addEventListener('click', () => $('#product-modal').classList.remove('open'));
   $('#cancel-form').addEventListener('click', () => $('#product-modal').classList.remove('open'));
   $('#product-form').addEventListener('submit', submitProduct);

@@ -29,6 +29,21 @@ type Product struct {
 	SortOrder         int      `json:"sort_order"`
 }
 
+type JournalArticle struct {
+	ID          int64      `json:"id"`
+	Slug        string     `json:"slug"`
+	Title       string     `json:"title"`
+	Eyebrow     string     `json:"eyebrow"`
+	Category    string     `json:"category"`
+	Excerpt     string     `json:"excerpt"`
+	Body        string     `json:"body"`
+	ImagePath   *string    `json:"image_path"`
+	IsPublished bool       `json:"is_published"`
+	PublishedAt *time.Time `json:"published_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
 func (p Product) packLabel() string {
 	return itoa(p.PackSizeG) + " g pack"
 }

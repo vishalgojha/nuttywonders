@@ -50,6 +50,7 @@
         <a class="active" href="#overview">◈ <span>Overview</span></a>
         <a href="#orders">▤ <span>Orders</span><b id="nav-order-count">0</b></a>
         <a href="#products">▣ <span>Products</span></a>
+        <a href="#journal">▤ <span>Journal</span></a>
         <a href="#customers">♙ <span>Customers</span></a>
         <a href="#messages">✉ <span>Messages</span></a>
         <a href="#broadcast">✦ <span>Broadcast</span></a>
@@ -108,6 +109,11 @@
       <section class="panel" id="customers">
         <div class="panel-head"><div><p class="eyebrow">Your community</p><h2>Customers</h2></div><label class="search customer-search"><span>⌕</span><input id="customer-search" placeholder="Name, phone or email" /></label></div>
         <div class="customer-list" id="customer-list"></div>
+      </section>
+
+      <section class="panel" id="journal">
+        <div class="panel-head"><div><p class="eyebrow">Publish helpful stories</p><h2>Journal</h2></div><button class="button button-dark" id="new-journal">+ New article</button></div>
+        <div class="journal-admin-list" id="journal-list"></div>
       </section>
 
       <section class="panel" id="messages">
@@ -193,6 +199,22 @@
       <div id="order-lines" class="order-edit-lines"></div>
       <button class="button button-ghost" type="button" id="add-order-line">+ Add item</button>
       <div class="form-actions"><button type="button" class="button button-ghost" id="cancel-order-form">Cancel</button><button class="button button-dark" type="submit">Save order</button></div>
+    </form>
+  </div></div>
+
+  <div class="modal" id="journal-modal"><div class="modal-card">
+    <button class="close" id="close-journal-modal">×</button>
+    <div class="modal-head"><p class="eyebrow">Journal editor</p><h2 id="journal-form-title">New article</h2><p>Share useful, honest stories from the NuttyWonders kitchen.</p></div>
+    <form id="journal-form">
+      <input type="hidden" id="journal-id" />
+      <label>Title<input id="journal-title" required placeholder="How to build a happier pantry" /></label>
+      <div class="two"><label>Eyebrow<input id="journal-eyebrow" value="Snack notes" /></label><label>Category<input id="journal-category" value="Snack notes" /></label></div>
+      <label>URL slug <span class="optional">letters, numbers and hyphens</span><input id="journal-slug" placeholder="happier-pantry" /></label>
+      <label>Image path <span class="optional">optional, e.g. assets/ragi-brownie.webp</span><input id="journal-image" /></label>
+      <label>Short excerpt<textarea id="journal-excerpt" rows="2" required></textarea></label>
+      <label>Article body <span class="optional">Separate paragraphs with a blank line</span><textarea id="journal-body" rows="8" required></textarea></label>
+      <label class="checkbox"><input id="journal-published" type="checkbox" /> Publish on the storefront</label>
+      <div class="form-actions"><button type="button" class="button button-ghost" id="cancel-journal">Cancel</button><button class="button button-dark" type="submit">Save article</button></div>
     </form>
   </div></div>
 

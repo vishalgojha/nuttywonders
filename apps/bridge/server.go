@@ -31,6 +31,8 @@ func (s *Server) Handler() http.Handler {
 
 	mux.HandleFunc("GET /api/health", s.handleHealth)
 	mux.HandleFunc("GET /api/products", s.handleListProducts)
+	mux.HandleFunc("GET /api/journal", s.handleListJournal)
+	mux.HandleFunc("GET /api/journal/{slug}", s.handleGetJournal)
 	mux.HandleFunc("GET /api/settings", s.handlePublicSettings)
 	mux.HandleFunc("POST /api/orders", s.limit.limit("checkout", 10, time.Minute, s.handleCheckout))
 	mux.HandleFunc("POST /api/orders/verify", s.limit.limit("payment", 20, time.Minute, s.handleVerifyPayment))
@@ -49,6 +51,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("GET /api/admin/dashboard", s.auth.requireAdmin(s.handleDashboard))
 	mux.Handle("GET /api/admin/products", s.auth.requireAdmin(s.handleAdminListProducts))
 	mux.Handle("POST /api/admin/products", s.auth.requireAdmin(s.handleAdminSaveProduct))
+	mux.Handle("GET /api/admin/journal", s.auth.requireAdmin(s.handleAdminListJournal))
+	mux.Handle("POST /api/admin/journal", s.auth.requireAdmin(s.handleAdminSaveJournal))
 	mux.Handle("GET /api/admin/orders", s.auth.requireAdmin(s.handleAdminListOrders))
 	mux.Handle("GET /api/admin/orders/{id}", s.auth.requireAdmin(s.handleAdminGetOrder))
 	mux.Handle("PATCH /api/admin/orders/{id}", s.auth.requireAdmin(s.handleAdminUpdateOrder))

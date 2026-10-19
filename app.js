@@ -96,6 +96,26 @@ function renderProducts() {
   }));
 }
 
+function renderJournal(articles) {
+  const grid = $('#journal-grid');
+  if (!grid) return;
+  grid.innerHTML = articles.length ? articles.slice(0, 3).map((article) => {
+    const image = article.image_path
+      ? `<img src="${escapeHtml(article.image_path)}" alt="${escapeHtml(article.title)}" loading="lazy" decoding="async" />`
+      : '<div class="journal-art cocoa"></div>';
+    return `<article><a href="/journal/${encodeURIComponent(article.slug)}"><div class="journal-img">${image}</div><p class="eyebrow">${escapeHtml(article.eyebrow)}</p><h3>${escapeHtml(article.title)}</h3><span class="text-link">Read more →</span></a></article>`;
+  }).join('') : '<p class="cart-empty">New snack notes are coming soon.</p>';
+}
+
+async function loadJournal() {
+  try {
+    const result = await api('/journal');
+    renderJournal(result.articles || []);
+  } catch {
+    // The journal is supplementary; keep the page usable if it is unavailable.
+  }
+}
+
 function updateProductStructuredData() {
   const script = $('#product-structured-data');
   if (!script) return;
@@ -192,6 +212,7 @@ function addToCart(product, quantity = 1) {
   else state.cart.push({ id: product.id, qty: safeQuantity });
   saveCart();
   renderCart();
+  loadJournal();
   toast(`${product.name} added to your bag`);
 }
 
