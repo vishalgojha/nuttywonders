@@ -33,6 +33,21 @@ type openRouterResponse struct {
 }
 
 func (s *Server) openRouterReply(ctx context.Context, body string) (string, error) {
+	reply, err := s.openRouterReplyWithModel(ctx, body, s.cfg.OpenRouterModel)
+	if err == nil {
+		return reply, nil
+	}
+	if fallback := strings.TrimSpace(s.cfg.OpenRouterFallbackModel); fallback != "" && fallback != s.cfg.OpenRouterModel {
+		fallbackReply, fallbackErr := s.openRouterReplyWithModel(ctx, body, fallback)
+		if fallbackErr == nil {
+			return fallbackReply, nil
+		}
+		return "", fmt.Errorf("primary model: %v; fallback model: %w", err, fallbackErr)
+	}
+	return "", err
+}
+
+func (s *Server) openRouterReplyWithModel(ctx context.Context, body, model string) (string, error) {
 	products, err := s.activeProducts(ctx)
 	if err != nil {
 		return "", err
@@ -58,7 +73,7 @@ Live catalog:
 	messages = append(messages, s.aiHistory(ctx, s.currentPhone(ctx))...)
 	messages = append(messages, openRouterMessage{Role: "user", Content: body})
 	payload, err := json.Marshal(openRouterRequest{
-		Model:       s.cfg.OpenRouterModel,
+		Model:       model,
 		Messages:    messages,
 		MaxTokens:   220,
 		Temperature: 0.3,

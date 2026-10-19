@@ -25,6 +25,7 @@ type Config struct {
 	RazorpayWebhookSecret string
 	OpenRouterAPIKey      string
 	OpenRouterModel       string
+	OpenRouterFallbackModel string
 	AIBotEnabled          bool
 }
 
@@ -45,7 +46,8 @@ func loadConfig() (Config, error) {
 		RazorpayKeySecret:     os.Getenv("RAZORPAY_KEY_SECRET"),
 		RazorpayWebhookSecret: os.Getenv("RAZORPAY_WEBHOOK_SECRET"),
 		OpenRouterAPIKey:      os.Getenv("OPENROUTER_API_KEY"),
-		OpenRouterModel:       env("OPENROUTER_MODEL", "liquid/lfm-2.5-2.6b:free"),
+		OpenRouterModel:       env("OPENROUTER_MODEL", "minimax/minimax-m3.1-flash:free"),
+		OpenRouterFallbackModel: env("OPENROUTER_FALLBACK_MODEL", "deepseek/deepseek-v4.1-flash-1017"),
 		AIBotEnabled:          envBool("AI_BOT_ENABLED", true),
 	}
 
