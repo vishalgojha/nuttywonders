@@ -278,7 +278,19 @@ function renderOverview() {
 function renderCustomers() {
   const term = ($('#customer-search')?.value || '').trim().toLowerCase();
   const customers = state.customers.filter((customer) => !term || [customer.name, customer.phone_e164, customer.email, customer.city].some((value) => String(value || '').toLowerCase().includes(term)));
-  $('#customer-list').innerHTML = customers.length ? customers.map((customer) => `<div class="customer-row"><div><strong>${escapeHtml(customer.name || 'Unnamed customer')}</strong><small>${escapeHtml(customer.phone_e164)}${customer.email ? ` · ${escapeHtml(customer.email)}` : ''}</small></div><span>${escapeHtml(customer.city || 'City not added')}</span><em class="tag">${customer.marketing_opt_in ? 'Opted in' : 'No marketing'}</em></div>`).join('') : '<div class="empty">No customers match this search.</div>';
+  $('#customer-list').innerHTML = customers.length ? customers.map((customer) => {
+    const orders = state.orders.filter((order) => order.phone_e164 === customer.phone_e164);
+    const activeOrders = orders.filter((order) => order.status !== 'cancelled');
+    const totalSpent = activeOrders.reduce((sum, order) => sum + Number(order.total_inr || 0), 0);
+    const lastOrder = orders[0];
+    return `<div class="customer-row">
+      <div class="customer-main"><strong>${escapeHtml(customer.name || 'Unnamed customer')}</strong><small>${escapeHtml(customer.phone_e164)}${customer.email ? ` · ${escapeHtml(customer.email)}` : ''}</small><small>${escapeHtml([customer.city, customer.pincode].filter(Boolean).join(' · ') || 'Address not added')}</small></div>
+      <div class="customer-stat"><b>${orders.length}</b><small>order${orders.length === 1 ? '' : 's'}</small></div>
+      <div class="customer-stat"><b>${money(totalSpent)}</b><small>spent</small></div>
+      <div class="customer-last"><b>${lastOrder ? escapeHtml(lastOrder.code) : 'No orders'}</b><small>${lastOrder ? formatWhen(lastOrder.created_at) : 'New customer'}</small></div>
+      <em class="tag">${customer.marketing_opt_in ? 'Opted in' : customer.unsubscribed ? 'Unsubscribed' : 'No marketing'}</em>
+    </div>`;
+  }).join('') : '<div class="empty">No customers match this search.</div>';
 }
 
 function bindSectionLinks() {
