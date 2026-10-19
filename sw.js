@@ -1,4 +1,4 @@
-const CACHE = 'nuttywonders-pwa-v11';
+const CACHE = 'nuttywonders-pwa-v14';
 const SHELL = [
   '/index.html',
   '/styles.css',
