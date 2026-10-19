@@ -37,6 +37,10 @@ type whatsapp struct {
 	status  string
 	jid     string
 	qr      string
+	// pairingReady is set only after WhatsMeow has emitted the first QR code.
+	// PairPhone must not be called before that point: the pre-login websocket
+	// may exist but still be unable to accept the pairing IQ request.
+	pairingReady bool
 	lastErr string
 }
 
@@ -141,6 +145,9 @@ func (w *whatsapp) startPairing(ctx context.Context, cli *whatsmeow.Client) erro
 	}
 
 	w.setState("pairing", "", "", nil)
+	w.mu.Lock()
+	w.pairingReady = false
+	w.mu.Unlock()
 
 	_, cancelPair := context.WithCancel(ctx)
 	go func() {
@@ -148,17 +155,29 @@ func (w *whatsapp) startPairing(ctx context.Context, cli *whatsmeow.Client) erro
 		for item := range qrChan {
 			switch item.Event {
 			case "code":
+				w.mu.Lock()
+				w.pairingReady = true
+				w.mu.Unlock()
 				w.setState("pairing", "", item.Code, nil)
 			case "success":
+				w.mu.Lock()
+				w.pairingReady = false
+				w.mu.Unlock()
 				jid := ""
 				if cli.Store.ID != nil {
 					jid = cli.Store.ID.String()
 				}
 				w.setState("connected", jid, "", nil)
 			case "timeout":
+				w.mu.Lock()
+				w.pairingReady = false
+				w.mu.Unlock()
 				w.log.Warnf("qr code expired, waiting for the next one")
 				w.setState("pairing", "", "", nil)
 			case "error":
+				w.mu.Lock()
+				w.pairingReady = false
+				w.mu.Unlock()
 				w.setState("error", "", "", item.Error)
 			}
 		}
@@ -183,6 +202,9 @@ func (w *whatsapp) handleEvent(raw any) {
 		w.setState("connected", jid, "", nil)
 
 	case *events.Disconnected:
+		w.mu.Lock()
+		w.pairingReady = false
+		w.mu.Unlock()
 		if cli := w.cli(); cli != nil && !cli.Store.Deleted {
 			w.setState("disconnected", "", "", nil)
 		}
@@ -194,6 +216,9 @@ func (w *whatsapp) handleEvent(raw any) {
 		w.setState("disconnected", "", "", errors.New("replaced by another connection, is a second bridge running?"))
 
 	case *events.PairSuccess:
+		w.mu.Lock()
+		w.pairingReady = false
+		w.mu.Unlock()
 		w.log.Infof("whatsapp paired as %s", evt.ID.String())
 		w.setState("connected", evt.ID.String(), "", nil)
 
@@ -344,11 +369,31 @@ func (w *whatsapp) Logout(ctx context.Context) error {
 func (w *whatsapp) RequestPairingCode(ctx context.Context, phone string) (string, error) {
 	cli := w.cli()
 	if cli == nil {
-		return "", errNotConnected
+		return "", errors.New("whatsapp pairing is still starting; wait a moment and try again")
 	}
 	normalised, err := normalizePhone(phone)
 	if err != nil {
 		return "", err
+	}
+
+	// WhatsMeow documents that PairPhone must be called after the first QR
+	// event. Waiting here also covers the short reconnect window after the
+	// bridge starts, instead of exposing its low-level "websocket not
+	// connected" error to the admin UI.
+	deadline := time.NewTicker(50 * time.Millisecond)
+	defer deadline.Stop()
+	for {
+		w.mu.RLock()
+		ready := w.pairingReady
+		w.mu.RUnlock()
+		if ready && cli.IsConnected() {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return "", errors.New("WhatsApp pairing is not ready yet; wait for a fresh QR code and try again")
+		case <-deadline.C:
+		}
 	}
 	return cli.PairPhone(ctx, normalised, true, whatsmeow.PairClientOtherWebClient, pushName)
 }
