@@ -9,6 +9,7 @@ const state = {
   editingOrderLines: [],
   resetAccessToken: '',
 };
+let refreshPromise = null;
 
 const OWNER_EMAIL = 'nuttywonders.co@gmail.com';
 
@@ -16,12 +17,30 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 async function api(path, options = {}) {
-  const response = await fetch('/api' + path, {
+  const request = () => fetch('/api' + path, {
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     ...options,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
+  let response = await request();
+
+  // Access tokens expire hourly. Refresh once before showing the login screen;
+  // all simultaneous dashboard calls share the same refresh request because
+  // Supabase rotates refresh tokens on every successful use.
+  const canRefresh = path.startsWith('/admin/') && !path.startsWith('/admin/session');
+  if ((response.status === 401 || response.status === 403) && canRefresh) {
+    if (!refreshPromise) {
+      refreshPromise = fetch('/api/admin/session/refresh', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      }).finally(() => { refreshPromise = null; });
+    }
+    const refreshed = await refreshPromise;
+    if (refreshed.ok) response = await request();
+  }
 
   if (response.status === 401 || response.status === 403) {
     showLogin();
