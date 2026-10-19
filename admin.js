@@ -723,6 +723,10 @@ function renderWhatsApp() {
     ? 'Order confirmations and broadcasts go out from this number.'
     : 'Scan the QR code from WhatsApp → Linked devices to link this shop.');
 
+  const pairButton = $('#pair-code');
+  pairButton.disabled = connected || Boolean(wa.qr_code);
+  pairButton.textContent = wa.qr_code ? 'Scan QR above' : 'Use phone pairing code';
+
   const qrBox = $('#qr-box');
   if (wa.qr_code && !connected) {
     qrBox.hidden = false;

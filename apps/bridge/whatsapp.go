@@ -157,6 +157,7 @@ func (w *whatsapp) startPairing(ctx context.Context, cli *whatsmeow.Client) erro
 				w.setState("connected", jid, "", nil)
 			case "timeout":
 				w.log.Warnf("qr code expired, waiting for the next one")
+				w.setState("pairing", "", "", nil)
 			case "error":
 				w.setState("error", "", "", item.Error)
 			}

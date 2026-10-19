@@ -23,6 +23,9 @@ type Config struct {
 	RazorpayKeyID         string
 	RazorpayKeySecret     string
 	RazorpayWebhookSecret string
+	OpenRouterAPIKey      string
+	OpenRouterModel       string
+	AIBotEnabled          bool
 }
 
 func loadConfig() (Config, error) {
@@ -41,6 +44,9 @@ func loadConfig() (Config, error) {
 		RazorpayKeyID:         os.Getenv("RAZORPAY_KEY_ID"),
 		RazorpayKeySecret:     os.Getenv("RAZORPAY_KEY_SECRET"),
 		RazorpayWebhookSecret: os.Getenv("RAZORPAY_WEBHOOK_SECRET"),
+		OpenRouterAPIKey:      os.Getenv("OPENROUTER_API_KEY"),
+		OpenRouterModel:       env("OPENROUTER_MODEL", "liquid/lfm-2.5-2.6b:free"),
+		AIBotEnabled:          envBool("AI_BOT_ENABLED", true),
 	}
 
 	var missing []string

@@ -55,6 +55,14 @@ func (s *Server) botReply(ctx context.Context, body string) (string, error) {
 		}
 	}
 
+	if s.cfg.AIBotEnabled && strings.TrimSpace(s.cfg.OpenRouterAPIKey) != "" {
+		if reply, err := s.openRouterReply(ctx, text); err == nil && strings.TrimSpace(reply) != "" {
+			return reply, nil
+		} else if err != nil {
+			s.log.Warn("AI reply failed; using the built-in reply", "error", err)
+		}
+	}
+
 	switch {
 	case matchesAny(lower, "hi", "hello", "hey", "hii", "namaste"):
 		return s.greetingReply(ctx)
