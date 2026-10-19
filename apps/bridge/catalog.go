@@ -45,7 +45,7 @@ func (s *Server) handleListProducts(w http.ResponseWriter, r *http.Request) {
 	var products []Product
 	query := url.Values{}
 	query.Set("is_active", "eq.true")
-	query.Set("select", "id,slug,name,tagline,description,category,image_path,pack_size_g,shelf_life_days,ingredients,allergens,price_inr,stock_packs,sort_order")
+	query.Set("select", "id,slug,name,tagline,description,category,image_path,image_paths,pack_size_g,shelf_life_days,ingredients,allergens,price_inr,stock_packs,sort_order")
 	query.Set("order", "sort_order.asc,id.asc")
 
 	if err := s.db.Select(ctx, "products", query, &products); err != nil {
@@ -64,7 +64,7 @@ func (s *Server) handleAdminListProducts(w http.ResponseWriter, r *http.Request,
 
 	var products []Product
 	query := url.Values{}
-	query.Set("select", "id,slug,name,tagline,description,category,image_path,pack_size_g,shelf_life_days,ingredients,allergens,price_inr,cost_ingredient_inr,cost_packaging_inr,cost_labour_inr,cost_overhead_inr,stock_packs,is_active,sort_order")
+	query.Set("select", "id,slug,name,tagline,description,category,image_path,image_paths,pack_size_g,shelf_life_days,ingredients,allergens,price_inr,cost_ingredient_inr,cost_packaging_inr,cost_labour_inr,cost_overhead_inr,stock_packs,is_active,sort_order")
 	query.Set("order", "sort_order.asc,id.asc")
 
 	if err := s.db.Select(ctx, "products", query, &products); err != nil {
@@ -85,6 +85,7 @@ type productInput struct {
 	Description       *string  `json:"description"`
 	Category          string   `json:"category"`
 	ImagePath         *string  `json:"image_path"`
+	ImagePaths        []string `json:"image_paths"`
 	PackSizeG         int      `json:"pack_size_g"`
 	ShelfLifeDays     int      `json:"shelf_life_days"`
 	Ingredients       []string `json:"ingredients"`
@@ -137,6 +138,19 @@ func (s *Server) handleAdminSaveProduct(w http.ResponseWriter, r *http.Request, 
 	}
 	if input.ImagePath != nil {
 		body["image_path"] = strings.TrimSpace(*input.ImagePath)
+	}
+	if input.ImagePaths != nil {
+		paths := make([]string, 0, 5)
+		for _, path := range input.ImagePaths {
+			path = strings.TrimSpace(path)
+			if path != "" && len(paths) < 5 {
+				paths = append(paths, path)
+			}
+		}
+		body["image_paths"] = paths
+		if len(paths) > 0 {
+			body["image_path"] = paths[0]
+		}
 	}
 	if input.IsActive != nil {
 		body["is_active"] = *input.IsActive

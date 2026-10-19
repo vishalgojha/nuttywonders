@@ -13,6 +13,7 @@ type Product struct {
 	Description       *string  `json:"description"`
 	Category          string   `json:"category"`
 	ImagePath         *string  `json:"image_path"`
+	ImagePaths        []string `json:"image_paths"`
 	PackSizeG         int      `json:"pack_size_g"`
 	ShelfLifeDays     int      `json:"shelf_life_days"`
 	Ingredients       []string `json:"ingredients"`

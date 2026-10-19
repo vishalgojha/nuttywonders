@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
   <!-- Version the Studio stylesheet so an older service-worker/browser cache
        cannot leave the login screen rendered as unstyled HTML. -->
-  <link rel="stylesheet" href="/admin.css?v=20261020-1" />
+  <link rel="stylesheet" href="/admin.css?v=20261020-2" />
 </head>
 <body>
   <div class="login-screen" id="login-screen">
@@ -179,6 +179,16 @@
       <div class="two"><label>Category<select id="category"><option value="granola">Granola</option><option value="bites">Bites</option><option value="bars">Bars & treats</option></select></label><label>Pack size (g)<input id="pack" type="number" min="1" value="200" /></label></div>
       <div class="two"><label>Selling price (₹)<input id="price" type="number" min="0" step="0.01" required placeholder="299" /></label><label>Stock (packs)<input id="stock" type="number" min="0" value="0" /></label></div>
       <label>Description<textarea id="description" rows="3" placeholder="A quick, delicious description..."></textarea></label>
+      <div class="product-images-field">
+        <p class="eyebrow">Product images <span class="optional">up to 5 paths or URLs</span></p>
+        <div class="product-image-inputs">
+          <input id="image-1" placeholder="Primary image path or URL" />
+          <input id="image-2" placeholder="Image 2 path or URL" />
+          <input id="image-3" placeholder="Image 3 path or URL" />
+          <input id="image-4" placeholder="Image 4 path or URL" />
+          <input id="image-5" placeholder="Image 5 path or URL" />
+        </div>
+      </div>
       <label>Ingredients <span class="optional">comma separated</span><input id="ingredients" placeholder="Dates, almonds, cocoa" /></label>
       <label>Allergen note <span class="optional">comma separated</span><input id="allergens" placeholder="Nuts, dairy" /></label>
       <div class="cost-box"><div><p class="eyebrow">Unit economics <span class="optional">optional</span></p><h3>Know your real cost</h3></div>
@@ -235,6 +245,6 @@
 
   <div class="toast" id="toast"></div>
   <script src="/qr.js?v=20261019-3"></script>
-  <script src="/admin.js?v=20261020-1"></script>
+  <script src="/admin.js?v=20261020-2"></script>
 </body>
 </html>

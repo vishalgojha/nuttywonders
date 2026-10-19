@@ -49,11 +49,24 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const productById = (id) => state.products.find((p) => String(p.id) === String(id));
 
+function productImages(product) {
+  const paths = Array.isArray(product?.image_paths) ? product.image_paths.filter(Boolean) : [];
+  if (product?.image_path && !paths.includes(product.image_path)) paths.unshift(product.image_path);
+  return paths.slice(0, 5);
+}
+
 function visualFor(product, imageAttrs = 'loading="lazy" decoding="async"') {
-  if (product.image_path) {
-    return `<div class="product-image photo"><img src="${product.image_path}" alt="${escapeHtml(product.name)}" ${imageAttrs}></div>`;
+  const image = productImages(product)[0];
+  if (image) {
+    return `<div class="product-image photo"><img src="${escapeHtml(image)}" alt="${escapeHtml(product.name)}" ${imageAttrs}></div>`;
   }
   return `<div class="product-image ${product.category}"><div class="shape"></div></div>`;
+}
+
+function productGallery(product) {
+  const images = productImages(product);
+  if (!images.length) return visualFor(product);
+  return `<div class="product-gallery"><div class="product-gallery-main" id="product-gallery-main"><img src="${escapeHtml(images[0])}" alt="${escapeHtml(product.name)}" /></div>${images.length > 1 ? `<div class="product-gallery-thumbs">${images.map((image, index) => `<button type="button" class="product-gallery-thumb${index === 0 ? ' active' : ''}" data-gallery-image="${escapeHtml(image)}"><img src="${escapeHtml(image)}" alt="${escapeHtml(product.name)} image ${index + 1}" /></button>`).join('')}</div>` : ''}</div>`;
 }
 
 function escapeHtml(value) {
@@ -130,7 +143,7 @@ function updateProductStructuredData() {
         '@type': 'Product',
         name: product.name,
         description: product.description || product.tagline || '',
-        image: product.image_path ? new URL(product.image_path, location.origin).href : undefined,
+        image: productImages(product).map((image) => new URL(image, location.origin).href),
         category: product.category,
         offers: {
           '@type': 'Offer',
@@ -176,7 +189,11 @@ function openModal(product) {
   $('#modal-category').textContent = product.tagline || product.category;
   $('#modal-title').textContent = product.name;
   $('#modal-description').textContent = product.description || '';
-  $('#modal-visual').innerHTML = visualFor(product);
+  $('#modal-visual').innerHTML = productGallery(product);
+  $$('.product-gallery-thumb').forEach((thumb) => thumb.addEventListener('click', () => {
+    $('#product-gallery-main img').src = thumb.dataset.galleryImage;
+    $$('.product-gallery-thumb').forEach((item) => item.classList.toggle('active', item === thumb));
+  }));
   $('#modal-price').textContent = money(product.price_inr);
   $('#modal-pack').textContent = `${packLabel(product.pack_size_g)} pack`;
   $('#modal-qty').value = '1';

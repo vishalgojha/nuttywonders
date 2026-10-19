@@ -127,6 +127,7 @@
 .checkbox{display:flex;flex-direction:row;align-items:center;gap:9px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:400}
 .checkbox input{width:15px;height:15px}
 #product-form .optional{display:inline;color:#a6ae9f;font-weight:400;text-transform:none;letter-spacing:0}
+.product-images-field{background:#f3f5ed;border:1px solid #dfe6d6;padding:15px}.product-images-field .eyebrow{margin:0 0 10px}.product-image-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.product-image-inputs input{border:1px solid var(--line);background:#fffdf8;outline:0;padding:10px 11px;font-size:12px}.product-image-inputs input:focus{border-color:var(--orange)}
 section[hidden]{display:none!important}
 @media(max-width:1100px){.order-row{grid-template-columns:1fr auto;gap:12px}.order-actions{grid-column:1/-1;max-width:none;justify-content:flex-start}.broadcast-form,.settings-grid,.wa-panel{grid-template-columns:1fr}.wa-actions{align-items:flex-start}.message-row{grid-template-columns:1fr}}
 

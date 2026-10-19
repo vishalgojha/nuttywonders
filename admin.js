@@ -563,6 +563,10 @@ function openProductForm(slug) {
   $('#price').value = product?.price_inr ?? '';
   $('#stock').value = product?.stock_packs ?? 0;
   $('#description').value = product?.description || '';
+  const imagePaths = product?.image_paths?.length ? product.image_paths : (product?.image_path ? [product.image_path] : []);
+  for (let index = 0; index < 5; index += 1) {
+    $(`#image-${index + 1}`).value = imagePaths[index] || '';
+  }
   $('#ingredients').value = (product?.ingredients || []).join(', ');
   $('#allergens').value = (product?.allergens || []).join(', ');
   $('#ingredient-cost').value = product?.cost_ingredient_inr ?? 0;
@@ -589,6 +593,7 @@ async function submitProduct(event) {
     price_inr: Number($('#price').value) || 0,
     stock_packs: Number($('#stock').value) || 0,
     description: $('#description').value.trim(),
+    image_paths: Array.from({ length: 5 }, (_, index) => $(`#image-${index + 1}`).value.trim()).filter(Boolean),
     ingredients: splitList($('#ingredients').value),
     allergens: splitList($('#allergens').value),
     cost_ingredient_inr: Number($('#ingredient-cost').value) || 0,
