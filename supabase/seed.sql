@@ -18,7 +18,7 @@ insert into public.app_settings (key, value) values
   ('upi_vpa',              '""'::jsonb),
   ('payment_method',       '"razorpay"'::jsonb),
   ('delivery_fee_inr',     '60'::jsonb),
-  ('free_shipping_over_inr', '799'::jsonb),
+  ('free_shipping_over_inr', '1000'::jsonb),
   ('discount_policy',      '""'::jsonb),
   ('default_discount_percent', '0'::jsonb),
   ('coupon_code',          '""'::jsonb),

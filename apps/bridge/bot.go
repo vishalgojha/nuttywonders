@@ -216,8 +216,8 @@ func (s *Server) offerReply(ctx context.Context) (string, error) {
 	if announcement := s.setting(ctx, "announcement", ""); announcement != "" {
 		return announcement + "\n\n" + s.shopLink(ctx, ""), nil
 	}
-	threshold := s.setting(ctx, "free_shipping_over_inr", "799")
-	return "Right now you get free delivery on orders above " + formatINR(parseMoney(threshold, 799)) +
+	threshold := s.setting(ctx, "free_shipping_over_inr", "1000")
+	return "Right now you get free delivery on orders above " + formatINR(parseMoney(threshold, 1000)) +
 		".\n\n" + s.shopLink(ctx, ""), nil
 }
 
@@ -248,8 +248,8 @@ func (s *Server) deliveryReply(ctx context.Context) (string, error) {
 	if fee := s.setting(ctx, "delivery_fee_inr", "60"); fee != "" {
 		fmt.Fprintf(&b, "Delivery charge: %s\n", formatINR(parseMoney(fee, 60)))
 	}
-	if threshold := s.setting(ctx, "free_shipping_over_inr", "799"); threshold != "" {
-		fmt.Fprintf(&b, "Free delivery above %s.\n", formatINR(parseMoney(threshold, 799)))
+	if threshold := s.setting(ctx, "free_shipping_over_inr", "1000"); threshold != "" {
+		fmt.Fprintf(&b, "Free delivery above %s.\n", formatINR(parseMoney(threshold, 1000)))
 	}
 	return strings.TrimSpace(b.String()), nil
 }

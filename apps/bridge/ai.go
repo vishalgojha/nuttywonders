@@ -63,7 +63,7 @@ func (s *Server) openRouterReplyWithModel(ctx context.Context, body, model strin
 Shop facts:
 - Storefront: ` + s.shopLink(ctx, "") + `
 - Delivery fee: ₹` + s.setting(ctx, "delivery_fee_inr", "60") + `
-- Free delivery above: ₹` + s.setting(ctx, "free_shipping_over_inr", "799") + `
+- Free delivery above: ₹` + s.setting(ctx, "free_shipping_over_inr", "1000") + `
 - Payment instructions: ` + s.setting(ctx, "payment_instructions", "UPI details will be shared by the team.") + `
 
 Live catalog:

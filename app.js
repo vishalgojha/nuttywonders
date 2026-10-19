@@ -264,9 +264,9 @@ function cartTotals() {
     return sum + (product ? Number(product.price_inr) * item.qty : 0);
   }, 0);
 
-  const freeOver = Number(state.settings.free_shipping_over_inr || 799);
+  const freeOver = Number(state.settings.free_shipping_over_inr || 1000);
   const fee = Number(state.settings.delivery_fee_inr || 60);
-  const safeFreeOver = isNaN(freeOver) ? 799 : freeOver;
+  const safeFreeOver = isNaN(freeOver) ? 1000 : freeOver;
   const safeFee = isNaN(fee) ? 60 : fee;
   const shipping = subtotal >= safeFreeOver ? 0 : safeFee;
 
@@ -328,8 +328,8 @@ function updateShippingProgress(subtotal) {
   const note = $('#shipping-progress-note');
   const bar = $('#shipping-progress-bar');
   if (!note || !bar) return;
-  const threshold = Number(state.settings.free_shipping_over_inr || 799);
-  const safeThreshold = Number.isFinite(threshold) && threshold > 0 ? threshold : 799;
+  const threshold = Number(state.settings.free_shipping_over_inr || 1000);
+  const safeThreshold = Number.isFinite(threshold) && threshold > 0 ? threshold : 1000;
   const progress = Math.min(100, Math.round((Number(subtotal || 0) / safeThreshold) * 100));
   bar.style.width = `${progress}%`;
   note.textContent = subtotal >= safeThreshold

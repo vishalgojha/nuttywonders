@@ -444,7 +444,7 @@ begin
     raise exception 'cart is empty';
   end if;
 
-  v_free_over := coalesce(public.get_setting('free_shipping_over_inr', '799')::numeric, 799);
+  v_free_over := coalesce(public.get_setting('free_shipping_over_inr', '1000')::numeric, 1000);
   v_fee := coalesce(public.get_setting('delivery_fee_inr', '60')::numeric, 60);
   v_shipping := case when v_subtotal >= v_free_over then 0 else v_fee end;
 

@@ -737,7 +737,7 @@ numericSettings.add('default_discount_percent');
 numericSettings.add('coupon_discount_percent');
 const settingDefaults = {
   delivery_fee_inr: '60',
-  free_shipping_over_inr: '799',
+  free_shipping_over_inr: '1000',
   default_discount_percent: '0',
   coupon_discount_percent: '0',
 };
