@@ -1,8 +1,13 @@
-const CACHE = 'nuttywonders-pwa-v9';
+const CACHE = 'nuttywonders-pwa-v10';
 const SHELL = [
   '/index.html',
   '/styles.css',
   '/app.js',
+  '/product.html',
+  '/product.js',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/llms.txt',
   '/admin.html',
   '/admin.css',
   '/admin.js',
