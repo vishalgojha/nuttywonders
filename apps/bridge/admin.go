@@ -349,6 +349,8 @@ func (s *Server) handleAdminSettings(w http.ResponseWriter, r *http.Request, _ a
 var editableSettings = map[string]bool{
 	"upi_vpa": true, "upi_payee_name": true, "owner_phone_e164": true,
 	"app_base_url": true, "delivery_fee_inr": true, "free_shipping_over_inr": true,
+	"discount_policy": true, "default_discount_percent": true, "coupon_code": true,
+	"coupon_discount_percent": true,
 	"payment_instructions": true, "support_email": true, "business_hours": true,
 	"announcement": true, "instagram_url": true,
 }

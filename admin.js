@@ -443,6 +443,7 @@ function renderProducts() {
 
 function openProductForm(slug) {
   const product = state.products.find((p) => p.slug === slug);
+  $('#product-modal .modal-card').scrollTop = 0;
   $('#product-modal').classList.add('open');
   $('#form-title').textContent = product ? `Edit ${product.name}` : 'Add a product';
   $('#product-id').value = product?.slug || '';
@@ -581,8 +582,14 @@ const settingFields = [
   ['owner_phone_e164', 'Shop WhatsApp number', 'Where order alerts go'],
   ['support_email', 'Support email', 'Shown to customers'],
   ['app_base_url', 'Storefront URL', 'Used in order links'],
-  ['delivery_fee_inr', 'Delivery fee (₹)', '60'],
-  ['free_shipping_over_inr', 'Free delivery above (₹)', '799'],
+  ['__delivery', 'Delivery & charges', 'Set what customers pay at checkout'],
+  ['delivery_fee_inr', 'Delivery fee (₹)', 'Charged below the free-delivery threshold'],
+  ['free_shipping_over_inr', 'Free delivery above (₹)', 'Orders at or above this amount'],
+  ['__discounts', 'Discounts & promotions', 'Keep your offers and coupon rules in one place'],
+  ['discount_policy', 'Discount policy', 'Example: 10% off first order'],
+  ['default_discount_percent', 'Default discount (%)', 'Planning value — 0 means none'],
+  ['coupon_code', 'Active coupon code', 'Optional code to share with customers'],
+  ['coupon_discount_percent', 'Coupon discount (%)', 'Discount attached to the active code'],
   ['payment_instructions', 'Payment instructions', 'One or two lines'],
   ['business_hours', 'Business hours', 'e.g. Mon to Sat, 10am to 7pm'],
   ['announcement', 'Announcement', 'Shown when customers ask about offers'],
@@ -590,6 +597,14 @@ const settingFields = [
 ];
 
 const numericSettings = new Set(['delivery_fee_inr', 'free_shipping_over_inr']);
+numericSettings.add('default_discount_percent');
+numericSettings.add('coupon_discount_percent');
+const settingDefaults = {
+  delivery_fee_inr: '60',
+  free_shipping_over_inr: '799',
+  default_discount_percent: '0',
+  coupon_discount_percent: '0',
+};
 
 async function saveSetting(input, button, status) {
   button.disabled = true;
@@ -610,10 +625,12 @@ async function saveSetting(input, button, status) {
 }
 
 function renderSettings() {
-  $('#settings-grid').innerHTML = settingFields.map(([key, label, hint]) => `
+  $('#settings-grid').innerHTML = settingFields.map(([key, label, hint]) => key.startsWith('__')
+    ? `<div class="settings-section"><p class="eyebrow">${escapeHtml(label)}</p><small>${escapeHtml(hint)}</small></div>`
+    : `
     <label class="setting">
       <span>${escapeHtml(label)}${hint ? `<small>${escapeHtml(hint)}</small>` : ''}</span>
-      <div class="setting-control"><input data-setting="${key}" type="${numericSettings.has(key) ? 'number' : 'text'}" ${numericSettings.has(key) ? 'min="0" step="1"' : ''} value="${escapeHtml(state.settings[key] ?? '')}" /><button type="button" data-setting-save="${key}">Save</button></div>
+      <div class="setting-control"><input data-setting="${key}" type="${numericSettings.has(key) ? 'number' : 'text'}" ${numericSettings.has(key) ? 'min="0" step="1"' : ''} value="${escapeHtml(state.settings[key] ?? settingDefaults[key] ?? '')}" /><button type="button" data-setting-save="${key}">Save</button></div>
       <small class="setting-status" data-setting-status="${key}"></small>
     </label>`).join('');
 
