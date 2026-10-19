@@ -49,9 +49,9 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 const productById = (id) => state.products.find((p) => String(p.id) === String(id));
 
-function visualFor(product) {
+function visualFor(product, imageAttrs = 'loading="lazy" decoding="async"') {
   if (product.image_path) {
-    return `<div class="product-image photo"><img src="${product.image_path}" alt="${escapeHtml(product.name)}" loading="lazy"></div>`;
+    return `<div class="product-image photo"><img src="${product.image_path}" alt="${escapeHtml(product.name)}" ${imageAttrs}></div>`;
   }
   return `<div class="product-image ${product.category}"><div class="shape"></div></div>`;
 }
@@ -74,9 +74,9 @@ function renderProducts() {
     : momentList;
 
   $('#product-count').textContent = `${list.length} snack${list.length === 1 ? '' : 's'}`;
-  $('#product-grid').innerHTML = list.map((product) => `
+  $('#product-grid').innerHTML = list.map((product, index) => `
     <article class="product-card" data-id="${product.id}">
-      <div class="product-visual-wrap">${visualFor(product)}<button class="quick-add" type="button" aria-label="Add ${escapeHtml(product.name)} to bag">+</button></div>
+      <div class="product-visual-wrap">${visualFor(product, index < 4 ? 'loading="eager" fetchpriority="high" decoding="async"' : 'loading="lazy" fetchpriority="low" decoding="async"')}<button class="quick-add" type="button" aria-label="Add ${escapeHtml(product.name)} to bag">+</button></div>
       <div class="product-info">
         <div>
           <h3>${escapeHtml(product.name)}</h3>

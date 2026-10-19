@@ -120,3 +120,4 @@
 .modal-actions{display:flex;align-items:center;gap:14px}.quantity-control{display:flex;align-items:center;border:1px solid var(--line);height:46px}.quantity-control button{border:0;background:none;width:30px;height:100%;font-size:18px;cursor:pointer;color:var(--ink)}.quantity-control output{min-width:22px;text-align:center;font-size:12px}
 .bundle-total{display:block;margin:-12px 0 20px;font-size:11px;font-weight:700;opacity:.72}
 @media(max-width:650px){.search-panel{inset:64px 0 auto}.search-inner{padding:18px 5vw}.search-close{right:5vw;top:44px}.modal-actions{align-items:stretch;flex-direction:column;gap:10px}.quantity-control{height:40px}.quantity-control button{width:42px}.modal-actions .button{justify-content:center}}
+.product-image.photo img{display:block;background:#e7e3d6}
