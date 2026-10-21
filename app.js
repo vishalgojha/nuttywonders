@@ -247,6 +247,74 @@ function closeHamperLightbox() {
   document.body.classList.remove('lightbox-open');
 }
 
+function addAssistantMessage(text, role = 'bot') {
+  const message = document.createElement('div');
+  message.className = `assistant-message assistant-message-${role}`;
+  message.textContent = text;
+  $('#assistant-messages').appendChild(message);
+  $('#assistant-messages').scrollTop = $('#assistant-messages').scrollHeight;
+}
+
+function assistantLocalFallback(message) {
+  const lower = message.toLowerCase();
+  if (/(diwali|hamper|gift|gifting|corporate)/.test(lower)) {
+    return { reply: 'I’ll take you to our Diwali hampers and gifting options.', actions: [{ type: 'navigate', target: '#gift' }] };
+  }
+  if (/(bag|cart|checkout)/.test(lower)) {
+    return { reply: 'Opening your bag now.', actions: [{ type: 'open_cart' }] };
+  }
+  const product = state.products.find((item) => `${item.name} ${item.slug} ${item.category}`.toLowerCase().includes(lower.replace(/add|buy|please|to my cart|in my bag/g, '').trim()))
+    || state.products.find((item) => lower.includes(item.name.toLowerCase()) || lower.includes(item.slug.toLowerCase()));
+  if (product && /(add|buy|bag|cart|order)/.test(lower)) {
+    return { reply: `${product.name} is ready to add to your bag.`, actions: [{ type: 'add_to_cart', slug: product.slug, quantity: 1 }] };
+  }
+  if (/(chai|snack|granola|brownie|bite)/.test(lower)) {
+    return { reply: 'I can help you choose a snack. Try asking for a chai-time pick, granola, brownies, or gifting.' };
+  }
+  return { reply: 'I can help with snacks, gifting, page navigation, or adding products to your bag. What are you looking for?' };
+}
+
+function runAssistantActions(actions = []) {
+  actions.forEach((action) => {
+    if (action.type === 'navigate' && /^#(top|shop|gift|our-story|journal|track)$/.test(action.target || '')) {
+      document.querySelector(action.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (action.type === 'add_to_cart') {
+      const product = state.products.find((item) => item.slug === action.slug);
+      if (product) addToCart(product, Math.max(1, Math.min(5, Number(action.quantity) || 1)));
+    }
+    if (action.type === 'open_cart') {
+      renderCart();
+      $('#cart-drawer').classList.add('open');
+    }
+  });
+}
+
+async function sendAssistantMessage(message) {
+  addAssistantMessage(message, 'user');
+  const loading = document.createElement('div');
+  loading.className = 'assistant-message assistant-message-bot assistant-loading';
+  loading.textContent = 'Thinking…';
+  $('#assistant-messages').appendChild(loading);
+  try {
+    const result = await fetch('/api/assistant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    if (!result.ok) throw new Error('assistant unavailable');
+    const reply = await result.json();
+    loading.remove();
+    addAssistantMessage(reply.reply || 'I’m here to help.');
+    runAssistantActions(reply.actions);
+  } catch {
+    loading.remove();
+    const reply = assistantLocalFallback(message);
+    addAssistantMessage(reply.reply);
+    runAssistantActions(reply.actions);
+  }
+}
+
 function addToCart(product, quantity = 1) {
   if (!product) return;
   const line = state.cart.find((item) => String(item.id) === String(product.id));
@@ -592,6 +660,27 @@ function wireEvents() {
   $('#site-search').addEventListener('keydown', (event) => {
     if (event.key === 'Escape') $('#search-close').click();
   });
+
+  $('#assistant-launcher').addEventListener('click', () => {
+    const panel = $('#assistant-panel');
+    const open = !panel.hidden;
+    panel.hidden = open;
+    $('#assistant-launcher').setAttribute('aria-expanded', String(!open));
+    if (!open) $('#assistant-input').focus();
+  });
+  $('#assistant-close').addEventListener('click', () => {
+    $('#assistant-panel').hidden = true;
+    $('#assistant-launcher').setAttribute('aria-expanded', 'false');
+  });
+  $('#assistant-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const input = $('#assistant-input');
+    const message = input.value.trim();
+    if (!message) return;
+    input.value = '';
+    sendAssistantMessage(message);
+  });
+  $$('[data-assistant-prompt]').forEach((button) => button.addEventListener('click', () => sendAssistantMessage(button.dataset.assistantPrompt)));
 
   $$('.hamper-card').forEach((card) => {
     card.setAttribute('tabindex', '0');
