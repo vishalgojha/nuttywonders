@@ -257,6 +257,9 @@ function addAssistantMessage(text, role = 'bot') {
 
 function assistantLocalFallback(message) {
   const lower = message.toLowerCase();
+  if (/(birthday|anniversary|milestone|return gift|thank[- ]you)/.test(lower)) {
+    return { reply: 'That sounds like a lovely gifting moment. Our curated hampers work beautifully for birthdays, anniversaries and milestones, and we can customise the treats, budget and packaging too.', actions: [{ type: 'navigate', target: '#gift' }] };
+  }
   if (/(diwali|hamper|gift|gifting|corporate)/.test(lower)) {
     return { reply: 'I’ll take you to our Diwali hampers and gifting options.', actions: [{ type: 'navigate', target: '#gift' }] };
   }
