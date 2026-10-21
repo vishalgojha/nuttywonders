@@ -221,6 +221,32 @@ function openModal(product) {
   $('#modal-backdrop').classList.add('open');
 }
 
+function openHamperLightbox(card) {
+  const image = card.querySelector('.hamper-image img');
+  const art = card.querySelector('.hamper-text-art');
+  const title = card.querySelector('h3')?.textContent?.trim() || 'NuttyWonders hamper';
+  const description = card.querySelector('.hamper-card-copy > p:not(.eyebrow)')?.textContent?.trim() || '';
+  const eyebrow = card.querySelector('.eyebrow')?.textContent?.trim() || 'NuttyWonders gifting';
+  const price = card.querySelector('.hamper-meta strong')?.textContent?.trim() || '';
+  const enquire = card.querySelector('.hamper-meta a')?.href || 'https://wa.me/918108398025';
+
+  $('#hamper-lightbox-eyebrow').textContent = eyebrow;
+  $('#hamper-lightbox-title').textContent = title;
+  $('#hamper-lightbox-description').textContent = description;
+  $('#hamper-lightbox-price').textContent = price;
+  $('#hamper-lightbox-enquire').href = enquire;
+  $('#hamper-lightbox-visual').innerHTML = image
+    ? `<img src="${escapeHtml(image.src)}" alt="${escapeHtml(image.alt || title)}" />`
+    : art?.outerHTML || '';
+  $('#hamper-lightbox').classList.add('open');
+  document.body.classList.add('lightbox-open');
+}
+
+function closeHamperLightbox() {
+  $('#hamper-lightbox').classList.remove('open');
+  document.body.classList.remove('lightbox-open');
+}
+
 function addToCart(product, quantity = 1) {
   if (!product) return;
   const line = state.cart.find((item) => String(item.id) === String(product.id));
@@ -567,9 +593,31 @@ function wireEvents() {
     if (event.key === 'Escape') $('#search-close').click();
   });
 
+  $$('.hamper-card').forEach((card) => {
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.addEventListener('click', (event) => {
+      if (event.target.closest('a, button')) return;
+      openHamperLightbox(card);
+    });
+    card.addEventListener('keydown', (event) => {
+      if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button')) {
+        event.preventDefault();
+        openHamperLightbox(card);
+      }
+    });
+  });
+
   $('#modal-close').addEventListener('click', () => $('#modal-backdrop').classList.remove('open'));
   $('#modal-backdrop').addEventListener('click', (event) => {
     if (event.target.id === 'modal-backdrop') event.currentTarget.classList.remove('open');
+  });
+  $('#hamper-lightbox-close').addEventListener('click', closeHamperLightbox);
+  $('#hamper-lightbox').addEventListener('click', (event) => {
+    if (event.target.id === 'hamper-lightbox') closeHamperLightbox();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && $('#hamper-lightbox').classList.contains('open')) closeHamperLightbox();
   });
   $('#modal-add').addEventListener('click', () => {
     addToCart(state.current, Number($('#modal-qty').textContent));
