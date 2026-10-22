@@ -34,6 +34,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/journal", s.handleListJournal)
 	mux.HandleFunc("GET /api/journal/{slug}", s.handleGetJournal)
 	mux.HandleFunc("GET /api/settings", s.handlePublicSettings)
+	mux.HandleFunc("GET /api/delivery-rate", s.handleDeliveryRate)
 	mux.HandleFunc("POST /api/assistant", s.limit.limit("storefront-assistant", 30, time.Minute, s.handleStorefrontAssistant))
 	mux.HandleFunc("POST /api/orders", s.limit.limit("checkout", 10, time.Minute, s.handleCheckout))
 	mux.HandleFunc("POST /api/orders/verify", s.limit.limit("payment", 20, time.Minute, s.handleVerifyPayment))

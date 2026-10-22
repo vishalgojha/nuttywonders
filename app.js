@@ -32,6 +32,7 @@ const state = {
   products: [],
   cart: JSON.parse(localStorage.getItem('nutty-cart') || '[]'),
   settings: {},
+  deliveryRate: null,
   current: null,
   filter: 'all',
   moment: 'all',
@@ -628,6 +629,28 @@ function openCheckout() {
   $('#checkout-done-panel').hidden = true;
   $('#checkout-drawer').classList.add('open');
   $('#cart-drawer').classList.remove('open');
+
+  const pincode = $('#checkout-pincode');
+  if (pincode && !pincode.dataset.deliveryRateWired) {
+    pincode.dataset.deliveryRateWired = 'true';
+    const refreshDeliveryRate = async () => {
+      const value = pincode.value.trim();
+      if (!/^\d{6}$/.test(value)) return;
+      try {
+        state.deliveryRate = await api(`/delivery-rate?pincode=${encodeURIComponent(value)}`);
+        const subtotal = cartTotals().subtotal;
+        const freeOver = Number(state.settings.free_shipping_over_inr || 1000);
+        const shipping = subtotal >= freeOver ? 0 : Number(state.deliveryRate.charge_inr || 60);
+        $('#checkout-summary-shipping').textContent = shipping === 0 ? 'Free' : money(shipping);
+        $('#checkout-summary-total').textContent = money(subtotal + shipping);
+      } catch (error) {
+        state.deliveryRate = null;
+        showCheckoutError(error.message);
+      }
+    };
+    pincode.addEventListener('blur', refreshDeliveryRate);
+    pincode.addEventListener('change', refreshDeliveryRate);
+  }
 }
 
 function wireEvents() {

@@ -398,6 +398,8 @@ declare
   v_shipping    numeric(10, 2);
   v_free_over   numeric(10, 2);
   v_fee         numeric(10, 2);
+  v_pincode     text;
+  v_zone_fee    numeric(10, 2);
   v_lines       jsonb := '[]'::jsonb;
   v_confirm     text;
 begin
@@ -446,7 +448,14 @@ begin
 
   v_free_over := coalesce(public.get_setting('free_shipping_over_inr', '1000')::numeric, 1000);
   v_fee := coalesce(public.get_setting('delivery_fee_inr', '60')::numeric, 60);
-  v_shipping := case when v_subtotal >= v_free_over then 0 else v_fee end;
+  v_pincode := regexp_replace(coalesce(p_address ->> 'pincode', ''), '\D', '', 'g');
+  select charge_inr into v_zone_fee
+  from public.delivery_pincode_rates
+  where pincode = v_pincode and active;
+  v_shipping := case
+    when v_subtotal >= v_free_over then 0
+    else coalesce(v_zone_fee, v_fee)
+  end;
 
   insert into public.orders (
     code, customer_id, phone_e164, customer_name, channel,
