@@ -163,6 +163,9 @@ main{display:flex;flex-direction:column}
 .legal-note{border-top:1px solid var(--line);padding-top:18px;margin-top:45px;color:var(--muted-copy);font-size:12px!important}
 @media(max-width:650px){.legal-main{padding:54px 5vw 75px}.legal-main p,.legal-main li{font-size:14px}.legal-main h2{margin-top:32px}}
 :root{--muted-copy:#5d6851}em{color:#b66b00}.eyebrow{color:var(--muted-copy)}.values small,.product-info p,.product-count,.filter,.moment-label,.moment,.testimonial-name{color:var(--muted-copy)}.values small,.product-info p{font-size:12px}.hero-proof{color:var(--muted-copy)}.hero-proof:hover{color:var(--ink)}
+.cookie-banner{position:fixed;z-index:60;left:20px;right:20px;bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:22px;max-width:760px;margin:0 auto;padding:17px 20px;background:var(--ink);color:#fff8df;box-shadow:0 12px 35px rgba(31,48,15,.24);border:1px solid rgba(255,255,255,.15)}
+.cookie-banner strong{display:block;font-family:var(--serif);font-size:18px}.cookie-banner p{margin:4px 0 0;color:#e8e6ce;font-size:11px;line-height:1.45}.cookie-banner-actions{display:flex;align-items:center;gap:15px;flex:0 0 auto}.cookie-banner-actions a{color:#fff8df;font-size:11px;text-decoration:underline;text-underline-offset:3px}.cookie-banner-actions button{border:0;background:var(--yellow);color:var(--ink);padding:10px 16px;font-size:11px;font-weight:700;cursor:pointer}.cookie-banner-actions button:hover{background:#fff8df}
+@media(max-width:650px){.cookie-banner{left:12px;right:12px;bottom:12px;display:block;padding:15px}.cookie-banner-actions{justify-content:flex-end;margin-top:12px}}
 
 /* A more product-led hero, a clearer trust strip, and controls sized for touch. */
 .hero-art{min-height:490px}
