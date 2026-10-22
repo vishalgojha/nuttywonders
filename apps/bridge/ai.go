@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -33,7 +35,8 @@ type openRouterResponse struct {
 }
 
 type storefrontAssistantRequest struct {
-	Message string `json:"message"`
+	Message   string `json:"message"`
+	SessionID string `json:"session_id"`
 }
 
 type storefrontAssistantAction struct {
@@ -44,8 +47,22 @@ type storefrontAssistantAction struct {
 }
 
 type storefrontAssistantReply struct {
-	Reply   string                     `json:"reply"`
-	Actions []storefrontAssistantAction `json:"actions"`
+	Reply     string                      `json:"reply"`
+	Actions   []storefrontAssistantAction `json:"actions"`
+	SessionID string                      `json:"session_id,omitempty"`
+}
+
+var storefrontSessionPattern = regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$`)
+
+func newStorefrontSessionID() string {
+	var bytes16 [16]byte
+	if _, err := rand.Read(bytes16[:]); err != nil {
+		return "00000000-0000-4000-8000-000000000000"
+	}
+	bytes16[6] = (bytes16[6] & 0x0f) | 0x40
+	bytes16[8] = (bytes16[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+		bytes16[0:4], bytes16[4:6], bytes16[6:8], bytes16[8:10], bytes16[10:16])
 }
 
 func (s *Server) handleStorefrontAssistant(w http.ResponseWriter, r *http.Request) {
@@ -62,12 +79,16 @@ func (s *Server) handleStorefrontAssistant(w http.ResponseWriter, r *http.Reques
 	if len(message) > 600 {
 		message = message[:600]
 	}
+	sessionID := strings.ToLower(strings.TrimSpace(input.SessionID))
+	if !storefrontSessionPattern.MatchString(sessionID) {
+		sessionID = newStorefrontSessionID()
+	}
 	products, err := s.storefrontProducts(r.Context())
 	if err != nil {
 		s.writeUpstreamError(w, err)
 		return
 	}
-	raw, err := s.openRouterStorefrontReply(r.Context(), message, products)
+	raw, err := s.openRouterStorefrontReply(r.Context(), sessionID, message, products)
 	if err != nil {
 		s.log.Warn("storefront assistant failed", "error", err)
 		writeError(w, http.StatusBadGateway, "assistant unavailable")
@@ -78,10 +99,14 @@ func (s *Server) handleStorefrontAssistant(w http.ResponseWriter, r *http.Reques
 	if err := json.Unmarshal([]byte(raw), &reply); err != nil || strings.TrimSpace(reply.Reply) == "" {
 		reply = storefrontAssistantReply{Reply: raw}
 	}
+	reply.SessionID = sessionID
 	if len(reply.Reply) > 900 {
 		reply.Reply = reply.Reply[:900]
 	}
 	reply.Actions = sanitizeStorefrontActions(reply.Actions, products)
+	if err := s.saveStorefrontChat(r.Context(), sessionID, message, reply.Reply); err != nil {
+		s.log.Warn("storefront assistant memory save failed", "error", err)
+	}
 	writeJSON(w, http.StatusOK, reply)
 }
 
@@ -131,13 +156,13 @@ func (s *Server) storefrontProducts(ctx context.Context) ([]Product, error) {
 	return products, nil
 }
 
-func (s *Server) openRouterStorefrontReply(ctx context.Context, body string, products []Product) (string, error) {
-	reply, err := s.openRouterStorefrontReplyWithModel(ctx, body, products, s.cfg.OpenRouterModel)
+func (s *Server) openRouterStorefrontReply(ctx context.Context, sessionID, body string, products []Product) (string, error) {
+	reply, err := s.openRouterStorefrontReplyWithModel(ctx, sessionID, body, products, s.cfg.OpenRouterModel)
 	if err == nil {
 		return reply, nil
 	}
 	if fallback := strings.TrimSpace(s.cfg.OpenRouterFallbackModel); fallback != "" && fallback != s.cfg.OpenRouterModel {
-		fallbackReply, fallbackErr := s.openRouterStorefrontReplyWithModel(ctx, body, products, fallback)
+		fallbackReply, fallbackErr := s.openRouterStorefrontReplyWithModel(ctx, sessionID, body, products, fallback)
 		if fallbackErr == nil {
 			return fallbackReply, nil
 		}
@@ -146,7 +171,7 @@ func (s *Server) openRouterStorefrontReply(ctx context.Context, body string, pro
 	return "", err
 }
 
-func (s *Server) openRouterStorefrontReplyWithModel(ctx context.Context, body string, products []Product, model string) (string, error) {
+func (s *Server) openRouterStorefrontReplyWithModel(ctx context.Context, sessionID, body string, products []Product, model string) (string, error) {
 	var catalog strings.Builder
 	for _, product := range products {
 		fmt.Fprintf(&catalog, "- slug=%s | %s | ₹%.0f | %s | %s | ingredients: %s\n", product.Slug, product.Name, product.PriceINR, product.packLabel(), valueOrEmpty(product.Tagline), valueOrEmpty(product.Description), strings.Join(product.Ingredients, ", "))
@@ -160,10 +185,13 @@ Return ONLY valid JSON with this shape: {"reply":"short answer","actions":[{"typ
 Live catalog:
 ` + catalog.String()
 
+	messages := []openRouterMessage{{Role: "system", Content: system}}
+	messages = append(messages, s.storefrontChatHistory(ctx, sessionID)...)
+	messages = append(messages, openRouterMessage{Role: "user", Content: body})
 	payload, err := json.Marshal(openRouterRequest{
-		Model: model,
-		Messages: []openRouterMessage{{Role: "system", Content: system}, {Role: "user", Content: body}},
-		MaxTokens: 260,
+		Model:       model,
+		Messages:    messages,
+		MaxTokens:   260,
 		Temperature: 0.2,
 	})
 	if err != nil {
@@ -198,6 +226,39 @@ Live catalog:
 		return "", fmt.Errorf("openrouter returned an empty reply")
 	}
 	return strings.TrimSpace(result.Choices[0].Message.Content), nil
+}
+
+type storefrontChatRow struct {
+	Role      string    `json:"role"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (s *Server) storefrontChatHistory(ctx context.Context, sessionID string) []openRouterMessage {
+	query := url.Values{}
+	query.Set("session_id", "eq."+sessionID)
+	query.Set("select", "role,body,created_at")
+	query.Set("order", "created_at.desc")
+	query.Set("limit", "12")
+	var rows []storefrontChatRow
+	if err := s.db.Select(ctx, "storefront_chat_messages", query, &rows); err != nil {
+		return nil
+	}
+	messages := make([]openRouterMessage, 0, len(rows))
+	for i := len(rows) - 1; i >= 0; i-- {
+		if rows[i].Role != "user" && rows[i].Role != "assistant" || strings.TrimSpace(rows[i].Body) == "" {
+			continue
+		}
+		messages = append(messages, openRouterMessage{Role: rows[i].Role, Content: rows[i].Body})
+	}
+	return messages
+}
+
+func (s *Server) saveStorefrontChat(ctx context.Context, sessionID, userMessage, assistantMessage string) error {
+	return s.db.Insert(ctx, "storefront_chat_messages", []map[string]string{
+		{"session_id": sessionID, "role": "user", "body": userMessage},
+		{"session_id": sessionID, "role": "assistant", "body": assistantMessage},
+	}, nil)
 }
 
 func (s *Server) openRouterReply(ctx context.Context, body string) (string, error) {

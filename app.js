@@ -33,6 +33,7 @@ const state = {
   cart: JSON.parse(localStorage.getItem('nutty-cart') || '[]'),
   settings: {},
   deliveryRate: null,
+  assistantSessionId: localStorage.getItem('nutty-assistant-session') || crypto.randomUUID(),
   current: null,
   filter: 'all',
   moment: 'all',
@@ -304,10 +305,14 @@ async function sendAssistantMessage(message) {
     const result = await fetch('/api/assistant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, session_id: state.assistantSessionId }),
     });
     if (!result.ok) throw new Error('assistant unavailable');
     const reply = await result.json();
+    if (reply.session_id) {
+      state.assistantSessionId = reply.session_id;
+      localStorage.setItem('nutty-assistant-session', state.assistantSessionId);
+    }
     loading.remove();
     addAssistantMessage(reply.reply || 'I’m here to help.');
     runAssistantActions(reply.actions);
