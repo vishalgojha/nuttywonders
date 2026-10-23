@@ -312,21 +312,44 @@ func (w *whatsapp) handleEvent(raw any) {
 }
 
 func (w *whatsapp) handleInbound(evt *events.Message) {
-	if evt.Info.IsFromMe || evt.Info.Chat.Server == types.HiddenUserServer {
+	if evt.Info.Chat.Server == types.HiddenUserServer {
 		return
 	}
+
+	cli := w.cli()
+	var own *types.JID
+	if cli != nil {
+		own = cli.Store.ID
+	}
+	selfChat := isSelfChat(evt.Info.Chat, own)
+
+	// Messages the owner sends to customers from the paired phone are the
+	// owner's own replies and must never be answered by the bot. The only
+	// exception is the self-chat ("Message yourself"), which the admin can use
+	// as a private session with the bot.
+	if evt.Info.IsFromMe && !selfChat {
+		return
+	}
+	if !selfChat && own != nil && evt.Info.Sender.User == own.User {
+		return
+	}
+
 	body := evt.Message.GetConversation()
 	if strings.TrimSpace(body) == "" {
 		return
 	}
 
-	cli := w.cli()
-	if cli != nil && cli.Store.ID != nil && evt.Info.Sender.User == cli.Store.ID.User {
+	phone := phoneFromJID(evt.Info.Sender)
+	if selfChat && phone == "" && own != nil {
+		phone = phoneFromJID(*own)
+	}
+	if phone == "" {
 		return
 	}
 
-	phone := phoneFromJID(evt.Info.Sender)
-	if phone == "" {
+	// Self-chat is admin-only: if the paired account is not the configured
+	// admin number, treat the message as owner-to-customer noise and drop it.
+	if selfChat && (w.config.AdminPhone == "" || phone != w.config.AdminPhone) {
 		return
 	}
 	messageType := "text"
@@ -376,6 +399,15 @@ func containsPaymentProofLanguage(body string) bool {
 	return strings.Contains(lower, "paid") || strings.Contains(lower, "payment") ||
 		strings.Contains(lower, "screenshot") || strings.Contains(lower, "transaction") ||
 		strings.Contains(lower, "utr")
+}
+
+// isSelfChat reports whether a message was sent in the account's own
+// "Message yourself" chat rather than to a customer.
+func isSelfChat(chat types.JID, own *types.JID) bool {
+	if own == nil {
+		return false
+	}
+	return chat.Server == types.DefaultUserServer && chat.User == own.User
 }
 
 func phoneFromJID(jid types.JID) string {

@@ -20,6 +20,7 @@ type Config struct {
 	SendGap               time.Duration
 	WorkerName            string
 	LogLevel              string
+	AdminPhone            string
 	RazorpayKeyID         string
 	RazorpayKeySecret     string
 	RazorpayWebhookSecret string
@@ -49,6 +50,15 @@ func loadConfig() (Config, error) {
 		OpenRouterModel:       env("OPENROUTER_MODEL", "minimax/minimax-m3.1-flash:free"),
 		OpenRouterFallbackModel: env("OPENROUTER_FALLBACK_MODEL", "deepseek/deepseek-v4.1-flash-1017"),
 		AIBotEnabled:          envBool("AI_BOT_ENABLED", true),
+	}
+
+	// Only this number may use the WhatsApp self-chat ("Message yourself") as a
+	// bot session; messages the owner sends to customers are still ignored.
+	c.AdminPhone = defaultCountryCode + "8108398025"
+	if raw := os.Getenv("WHATSAPP_ADMIN_PHONE"); raw != "" {
+		if normalized, err := normalizePhone(raw); err == nil {
+			c.AdminPhone = normalized
+		}
 	}
 
 	var missing []string
