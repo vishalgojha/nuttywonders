@@ -16,6 +16,10 @@ func (s *Server) handleInboundWhatsApp(ctx context.Context, phone, body string) 
 	if !s.cfg.AutoReply {
 		return
 	}
+	if isAdminSelfChat(ctx) {
+		s.handleAdminSelfChat(ctx, body)
+		return
+	}
 	if s.customerInHumanMode(ctx, phone) {
 		return
 	}
@@ -39,12 +43,187 @@ func (s *Server) handleInboundWhatsApp(ctx context.Context, phone, body string) 
 	}
 }
 
+type adminSelfChatKey struct{}
+
+func withAdminSelfChat(ctx context.Context) context.Context {
+	return context.WithValue(ctx, adminSelfChatKey{}, true)
+}
+
+func isAdminSelfChat(ctx context.Context) bool {
+	value, _ := ctx.Value(adminSelfChatKey{}).(bool)
+	return value
+}
+
+// handleAdminSelfChat is deliberately command-based. The self-chat can see
+// private operational data, so it must not be routed through the customer AI
+// prompt or expose data based on an ambiguous natural-language request.
+func (s *Server) handleAdminSelfChat(ctx context.Context, body string) {
+	if !s.limit.allowKey("admin-self-chat", s.currentPhone(ctx), 30, time.Minute) {
+		return
+	}
+
+	text := strings.TrimSpace(body)
+	lower := strings.ToLower(text)
+	var reply string
+	var err error
+	switch {
+	case lower == "help" || lower == "admin" || lower == "commands":
+		reply = "*Admin self-chat commands*\n\n" +
+			"ORDERS — recent active orders\n" +
+			"PENDING — unpaid orders\n" +
+			"ORDER NW-YYMMDD-0001 — order details\n" +
+			"STOCK — inventory snapshot\n" +
+			"CUSTOMER 918619244233 — customer lookup\n" +
+			"HELP — show this list"
+	case lower == "orders" || lower == "new orders" || lower == "recent orders":
+		reply, err = s.adminRecentOrders(ctx)
+	case lower == "pending" || lower == "pending payments" || lower == "unpaid":
+		reply, err = s.adminPendingOrders(ctx)
+	case strings.HasPrefix(lower, "order ") || orderCodePattern.MatchString(strings.ToUpper(text)):
+		code := orderCodePattern.FindString(strings.ToUpper(text))
+		reply, err = s.adminOrderLookup(ctx, code)
+	case strings.HasPrefix(lower, "customer "):
+		reply, err = s.adminCustomerLookup(ctx, strings.TrimSpace(text[len("customer "):]))
+	case lower == "stock" || lower == "inventory":
+		reply, err = s.adminInventory(ctx)
+	default:
+		reply = "I’m in admin mode. Reply HELP for commands."
+	}
+	if err != nil {
+		s.log.Warn("admin self-chat command failed", "command", text, "error", err)
+		reply = "I could not fetch that right now. Please try again or use the admin dashboard."
+	}
+	if strings.TrimSpace(reply) == "" {
+		return
+	}
+	sendCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+	if err := s.wa.SendText(sendCtx, s.currentPhone(ctx), reply); err != nil {
+		s.log.Warn("could not reply to admin self-chat", "error", err)
+	}
+}
+
+func (s *Server) adminRecentOrders(ctx context.Context) (string, error) {
+	orders, err := s.queryOrders(ctx, url.Values{
+		"status": {"in.(new,confirmed,packed,shipped)"},
+		"limit":  {"10"},
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(orders) == 0 {
+		return "No active orders.", nil
+	}
+	var b strings.Builder
+	b.WriteString("*Recent active orders*\n\n")
+	for _, order := range orders {
+		fmt.Fprintf(&b, "%s — %s — %s — %s\n", order.Code, order.CustomerName, order.PaymentStatus, formatINR(order.TotalINR))
+	}
+	return strings.TrimSpace(b.String()), nil
+}
+
+func (s *Server) adminPendingOrders(ctx context.Context) (string, error) {
+	orders, err := s.queryOrders(ctx, url.Values{
+		"payment_status": {"eq.pending"},
+		"status":         {"neq.cancelled"},
+		"limit":          {"20"},
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(orders) == 0 {
+		return "No unpaid orders.", nil
+	}
+	var b strings.Builder
+	b.WriteString("*Pending payments*\n\n")
+	for _, order := range orders {
+		fmt.Fprintf(&b, "%s — %s — %s — %s\n", order.Code, order.CustomerName, order.PhoneE164, formatINR(order.TotalINR))
+	}
+	return strings.TrimSpace(b.String()), nil
+}
+
+func (s *Server) adminOrderLookup(ctx context.Context, code string) (string, error) {
+	if code == "" {
+		return "Send an order code, for example ORDER NW-261024-0001.", nil
+	}
+	orders, err := s.queryOrders(ctx, url.Values{"code": {"eq." + code}, "limit": {"1"}})
+	if err != nil {
+		return "", err
+	}
+	if len(orders) == 0 {
+		return "Order " + code + " was not found.", nil
+	}
+	order := orders[0]
+	var b strings.Builder
+	fmt.Fprintf(&b, "*%s*\nCustomer: %s (%s)\nStatus: %s\nPayment: %s\nTotal: %s\n", order.Code, order.CustomerName, order.PhoneE164, order.Status, order.PaymentStatus, formatINR(order.TotalINR))
+	if order.Pincode != nil {
+		fmt.Fprintf(&b, "Pincode: %s\n", *order.Pincode)
+	}
+	if len(order.Items) > 0 {
+		b.WriteString("\nItems:\n")
+		for _, item := range order.Items {
+			fmt.Fprintf(&b, "- %s ×%d\n", item.ProductName, item.Quantity)
+		}
+	}
+	return strings.TrimSpace(b.String()), nil
+}
+
+func (s *Server) adminCustomerLookup(ctx context.Context, term string) (string, error) {
+	digits := digitsOnly(term)
+	query := url.Values{}
+	query.Set("select", "phone_e164,name,email,city,pincode,support_mode,created_at")
+	query.Set("limit", "5")
+	if digits != "" {
+		phone, err := normalizePhone(digits)
+		if err == nil {
+			query.Set("phone_e164", "eq."+phone)
+		}
+	} else {
+		query.Set("name", "ilike.*"+escapePostgrestPattern(term)+"*")
+	}
+	var rows []Customer
+	if err := s.db.Select(ctx, "customers", query, &rows); err != nil {
+		return "", err
+	}
+	if len(rows) == 0 {
+		return "Customer not found.", nil
+	}
+	var b strings.Builder
+	b.WriteString("*Customer lookup*\n\n")
+	for _, customer := range rows {
+		fmt.Fprintf(&b, "%s — %s", valueOrEmpty(customer.Name), customer.PhoneE164)
+		if customer.City != nil {
+			fmt.Fprintf(&b, " — %s", *customer.City)
+		}
+		fmt.Fprintf(&b, "\nSupport mode: %s\n", customer.SupportMode)
+	}
+	return strings.TrimSpace(b.String()), nil
+}
+
+func (s *Server) adminInventory(ctx context.Context) (string, error) {
+	products, err := s.activeProducts(ctx)
+	if err != nil {
+		return "", err
+	}
+	if len(products) == 0 {
+		return "No active products.", nil
+	}
+	var b strings.Builder
+	b.WriteString("*Active products*\n\n")
+	for _, product := range products {
+		fmt.Fprintf(&b, "%s — %s — %d packs\n", product.Name, formatINR(product.PriceINR), product.StockPacks)
+	}
+	return strings.TrimSpace(b.String()), nil
+}
+
 func (s *Server) customerInHumanMode(ctx context.Context, phone string) bool {
 	query := url.Values{}
 	query.Set("phone_e164", "eq."+phone)
 	query.Set("select", "support_mode")
 	query.Set("limit", "1")
-	var rows []struct{ SupportMode string `json:"support_mode"` }
+	var rows []struct {
+		SupportMode string `json:"support_mode"`
+	}
 	if err := s.db.Select(ctx, "customers", query, &rows); err != nil {
 		return false
 	}
@@ -385,7 +564,7 @@ func (s *Server) findCustomer(ctx context.Context, phone string) (*Customer, err
 func (s *Server) activeProducts(ctx context.Context) ([]Product, error) {
 	query := url.Values{}
 	query.Set("is_active", "eq.true")
-	query.Set("select", "id,name,tagline,pack_size_g,shelf_life_days,ingredients,allergens,price_inr,sort_order")
+	query.Set("select", "id,name,tagline,pack_size_g,shelf_life_days,ingredients,allergens,price_inr,stock_packs,sort_order")
 	query.Set("order", "sort_order.asc,id.asc")
 
 	var products []Product

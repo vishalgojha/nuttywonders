@@ -396,6 +396,9 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 	}
 	replyCtx, cancelReply := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelReply()
+	if selfChat {
+		replyCtx = withAdminSelfChat(replyCtx)
+	}
 	w.inbound(replyCtx, phone, body)
 }
 
