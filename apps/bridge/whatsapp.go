@@ -36,16 +36,16 @@ type whatsapp struct {
 	store   *sqlstore.Container
 	inbound inboundHandler
 
-	mu      sync.RWMutex
-	client  *whatsmeow.Client
-	status  string
-	jid     string
-	qr      string
+	mu     sync.RWMutex
+	client *whatsmeow.Client
+	status string
+	jid    string
+	qr     string
 	// pairingReady is set only after WhatsMeow has emitted the first QR code.
 	// PairPhone must not be called before that point: the pre-login websocket
 	// may exist but still be unable to accept the pairing IQ request.
 	pairingReady bool
-	lastErr string
+	lastErr      string
 }
 
 func newWhatsApp(cfg Config, db *Client, log waLog.Logger) (*whatsapp, error) {
@@ -318,10 +318,15 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 
 	cli := w.cli()
 	var own *types.JID
+	var ownLID *types.JID
 	if cli != nil {
 		own = cli.Store.ID
+		lid := cli.Store.GetLID()
+		if !lid.IsEmpty() {
+			ownLID = &lid
+		}
 	}
-	selfChat := isSelfChat(evt.Info.Chat, own)
+	selfChat := isSelfChat(evt.Info.Chat, own, ownLID)
 
 	// Messages the owner sends to customers from the paired phone are the
 	// owner's own replies and must never be answered by the bot. The only
@@ -367,11 +372,11 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 
 	logCtx, cancelLog := context.WithTimeout(context.Background(), 15*time.Second)
 	message := map[string]any{
-		"direction":   "in",
-		"phone_e164":  phone,
-		"body":        body,
-		"message_key": evt.Info.ID,
-		"status":      "received",
+		"direction":    "in",
+		"phone_e164":   phone,
+		"body":         body,
+		"message_key":  evt.Info.ID,
+		"status":       "received",
 		"message_type": messageType,
 	}
 	if paymentReviewStatus != "" {
@@ -403,11 +408,11 @@ func containsPaymentProofLanguage(body string) bool {
 
 // isSelfChat reports whether a message was sent in the account's own
 // "Message yourself" chat rather than to a customer.
-func isSelfChat(chat types.JID, own *types.JID) bool {
-	if own == nil {
-		return false
+func isSelfChat(chat types.JID, own, ownLID *types.JID) bool {
+	if own != nil && chat.Server == own.Server && chat.User == own.User {
+		return true
 	}
-	return chat.Server == types.DefaultUserServer && chat.User == own.User
+	return ownLID != nil && chat.Server == ownLID.Server && chat.User == ownLID.User
 }
 
 func phoneFromJID(jid types.JID) string {

@@ -8,6 +8,7 @@ import (
 
 func TestIsSelfChat(t *testing.T) {
 	own := types.NewJID("918108398025", types.DefaultUserServer)
+	ownLID := types.NewJID("244418099544183", types.HiddenUserServer)
 
 	cases := []struct {
 		name string
@@ -43,9 +44,13 @@ func TestIsSelfChat(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := isSelfChat(tc.chat, tc.own); got != tc.want {
+			if got := isSelfChat(tc.chat, tc.own, nil); got != tc.want {
 				t.Fatalf("isSelfChat(%v) = %v, want %v", tc.chat, got, tc.want)
 			}
 		})
+	}
+
+	if !isSelfChat(ownLID, &own, &ownLID) {
+		t.Error("an account LID must be recognized as the self-chat")
 	}
 }
