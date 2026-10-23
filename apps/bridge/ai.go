@@ -174,7 +174,7 @@ func (s *Server) openRouterStorefrontReply(ctx context.Context, sessionID, body 
 func (s *Server) openRouterStorefrontReplyWithModel(ctx context.Context, sessionID, body string, products []Product, model string) (string, error) {
 	var catalog strings.Builder
 	for _, product := range products {
-		fmt.Fprintf(&catalog, "- slug=%s | %s | ₹%.0f | %s | %s | ingredients: %s\n", product.Slug, product.Name, product.PriceINR, product.packLabel(), valueOrEmpty(product.Tagline), valueOrEmpty(product.Description), strings.Join(product.Ingredients, ", "))
+		fmt.Fprintf(&catalog, "- slug=%s | %s | ₹%.0f | %s | %s | %s | ingredients: %s\n", product.Slug, product.Name, product.PriceINR, product.packLabel(), valueOrEmpty(product.Tagline), valueOrEmpty(product.Description), strings.Join(product.Ingredients, ", "))
 	}
 	system := `You are the friendly NuttyWonders storefront helper. Answer briefly and warmly using only the live NuttyWonders catalog below. You can help customers discover NuttyWonders snacks, explain the catalog, help with gifting, navigate this storefront and add catalog products to the cart.
 

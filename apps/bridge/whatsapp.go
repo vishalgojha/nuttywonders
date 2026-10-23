@@ -117,6 +117,12 @@ func (w *whatsapp) Start(ctx context.Context) error {
 		return fmt.Errorf("load whatsapp device: %w", err)
 	}
 
+	// Store.ID is the correct signal for "already paired". IsLoggedIn() only
+	// turns true after a live connection, so it must not be used here.
+	if device.ID == nil {
+		return w.pairLoop(ctx)
+	}
+
 	cli := whatsmeow.NewClient(device, w.log)
 	cli.AutoTrustIdentity = true
 	cli.EnableAutoReconnect = true
@@ -126,11 +132,7 @@ func (w *whatsapp) Start(ctx context.Context) error {
 	w.client = cli
 	w.mu.Unlock()
 
-	if cli.Store.ID == nil || !cli.IsLoggedIn() {
-		return w.startPairing(ctx, cli)
-	}
-
-	jid := cli.Store.ID.String()
+	jid := device.ID.String()
 	// The connection row only allows disconnected/pairing/connected/error, so
 	// report the linked-but-not-yet-verified device as "pairing" until the
 	// Connected event lands.
@@ -142,20 +144,73 @@ func (w *whatsapp) Start(ctx context.Context) error {
 	return nil
 }
 
-func (w *whatsapp) startPairing(ctx context.Context, cli *whatsmeow.Client) error {
-	qrChan, err := cli.GetQRChannel(ctx)
-	if err != nil {
-		return fmt.Errorf("qr channel: %w", err)
-	}
+// pairLoop keeps a fresh QR code available until the phone is paired.
+//
+// WhatsMeow closes the QR channel on the first socket drop, so a single
+// GetQRChannel call leaves Studio showing an expired code forever. Every time
+// the channel closes without pairing we build a new client and try again.
+func (w *whatsapp) pairLoop(ctx context.Context) error {
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 
-	w.setState("pairing", "", "", nil)
-	w.mu.Lock()
-	w.pairingReady = false
-	w.mu.Unlock()
+		device, err := w.store.GetFirstDevice(ctx)
+		if err != nil {
+			return fmt.Errorf("load whatsapp device: %w", err)
+		}
+		// Pairing may have completed between iterations.
+		if device.ID != nil {
+			cli := whatsmeow.NewClient(device, w.log)
+			cli.AutoTrustIdentity = true
+			cli.EnableAutoReconnect = true
+			cli.AddEventHandler(w.handleEvent)
+			w.mu.Lock()
+			w.client = cli
+			w.mu.Unlock()
 
-	_, cancelPair := context.WithCancel(ctx)
-	go func() {
-		defer cancelPair()
+			jid := device.ID.String()
+			w.setState("pairing", jid, "", nil)
+			if err := cli.Connect(); err != nil {
+				return fmt.Errorf("connect: %w", err)
+			}
+			w.log.Infof("whatsapp connected as %s", jid)
+			return nil
+		}
+
+		cli := whatsmeow.NewClient(device, w.log)
+		cli.AutoTrustIdentity = true
+		cli.EnableAutoReconnect = true
+		cli.AddEventHandler(w.handleEvent)
+
+		w.mu.Lock()
+		w.client = cli
+		w.pairingReady = false
+		w.mu.Unlock()
+
+		qrChan, err := cli.GetQRChannel(ctx)
+		if err != nil {
+			cli.Disconnect()
+			w.log.Warnf("could not open whatsapp qr channel: %v", err)
+			if !sleepCtx(ctx, 2*time.Second) {
+				return ctx.Err()
+			}
+			continue
+		}
+
+		w.setState("pairing", "", "", nil)
+		if err := cli.Connect(); err != nil {
+			cli.Disconnect()
+			w.log.Warnf("whatsapp pairing connect failed: %v", err)
+			if !sleepCtx(ctx, 3*time.Second) {
+				return ctx.Err()
+			}
+			continue
+		}
+		w.log.Infof("whatsapp pairing started, scan the QR code from Studio > WhatsApp")
+
+		paired := false
+		hardError := false
 		for item := range qrChan {
 			switch item.Event {
 			case "code":
@@ -164,6 +219,7 @@ func (w *whatsapp) startPairing(ctx context.Context, cli *whatsmeow.Client) erro
 				w.mu.Unlock()
 				w.setState("pairing", "", item.Code, nil)
 			case "success":
+				paired = true
 				w.mu.Lock()
 				w.pairingReady = false
 				w.mu.Unlock()
@@ -176,23 +232,47 @@ func (w *whatsapp) startPairing(ctx context.Context, cli *whatsmeow.Client) erro
 				w.mu.Lock()
 				w.pairingReady = false
 				w.mu.Unlock()
-				w.log.Warnf("qr code expired, waiting for the next one")
+				w.log.Warnf("qr code expired, requesting a fresh one")
 				w.setState("pairing", "", "", nil)
 			case "error":
+				hardError = true
 				w.mu.Lock()
 				w.pairingReady = false
 				w.mu.Unlock()
 				w.setState("error", "", "", item.Error)
 			}
 		}
-	}()
 
-	if err := cli.Connect(); err != nil {
-		cancelPair()
-		return fmt.Errorf("connect: %w", err)
+		if paired {
+			w.log.Infof("whatsapp paired successfully")
+			return nil
+		}
+
+		cli.Disconnect()
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		// A dropped socket is normal and recovers immediately; a protocol
+		// error deserves a short backoff so we do not hammer WhatsApp.
+		delay := 1500 * time.Millisecond
+		if hardError {
+			delay = 5 * time.Second
+		}
+		if !sleepCtx(ctx, delay) {
+			return ctx.Err()
+		}
 	}
-	w.log.Infof("whatsapp pairing started, scan the QR code from Studio > WhatsApp")
-	return nil
+}
+
+func sleepCtx(ctx context.Context, d time.Duration) bool {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
 }
 
 func (w *whatsapp) handleEvent(raw any) {
