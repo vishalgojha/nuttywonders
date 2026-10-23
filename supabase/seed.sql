@@ -17,7 +17,7 @@ insert into public.app_settings (key, value) values
   ('email',                '"nuttywonders.co@gmail.com"'::jsonb),
   ('upi_vpa',              '""'::jsonb),
   ('payment_method',       '"razorpay"'::jsonb),
-  ('delivery_fee_inr',     '60'::jsonb),
+  ('delivery_fee_inr',     '120'::jsonb),
   ('free_shipping_over_inr', '1000'::jsonb),
   ('discount_policy',      '""'::jsonb),
   ('default_discount_percent', '0'::jsonb),

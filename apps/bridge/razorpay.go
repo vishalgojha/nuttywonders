@@ -172,6 +172,7 @@ func (s *Server) handleVerifyPayment(w http.ResponseWriter, r *http.Request) {
 	}
 	if !alreadyPaid {
 		s.queuePaymentReceived(ctx, &order)
+		s.queueOwnerOrderAlert(ctx, &order)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -266,6 +267,7 @@ func (s *Server) handleRazorpayWebhook(w http.ResponseWriter, r *http.Request) {
 	}
 	if !alreadyPaid {
 		s.queuePaymentReceived(ctx, &order)
+		s.queueOwnerOrderAlert(ctx, &order)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "handled": true, "code": order.Code})
@@ -316,10 +318,29 @@ func (s *Server) queuePaymentReceived(ctx context.Context, order *Order) {
 	body := "Payment received for NuttyWonders order " + order.Code +
 		" — ₹" + total + ". We're packing it up now!"
 	_ = s.db.Insert(ctx, "whatsapp_jobs", map[string]any{
-		"to_phone": order.PhoneE164,
-		"body":     body,
-		"kind":     "order_update",
-		"order_id": order.ID,
+		"to_phone":        order.PhoneE164,
+		"body":            body,
+		"kind":            "order_update",
+		"order_id":        order.ID,
+		"idempotency_key": "payment-received-" + strconv.FormatInt(order.ID, 10),
+	}, nil)
+}
+
+func (s *Server) queueOwnerOrderAlert(ctx context.Context, order *Order) {
+	ownerPhone := s.setting(ctx, "owner_phone_e164", "")
+	if ownerPhone == "" {
+		s.log.Warn("paid order has no owner phone configured", "code", order.Code)
+		return
+	}
+
+	body := "New paid order " + order.Code + " from " + order.CustomerName +
+		" (" + order.PhoneE164 + ") — " + strconv.FormatFloat(order.TotalINR, 'f', 2, 64) + " INR"
+	_ = s.db.Insert(ctx, "whatsapp_jobs", map[string]any{
+		"to_phone":        ownerPhone,
+		"body":            body,
+		"kind":            "order_alert",
+		"order_id":        order.ID,
+		"idempotency_key": "paid-order-alert-" + strconv.FormatInt(order.ID, 10),
 	}, nil)
 }
 

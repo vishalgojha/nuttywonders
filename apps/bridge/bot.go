@@ -245,8 +245,8 @@ func (s *Server) deliveryReply(ctx context.Context) (string, error) {
 		b.WriteString(hours + "\n\n")
 	}
 	b.WriteString("We ship across India. Delivery usually takes 3 to 6 working days.\n")
-	if fee := s.setting(ctx, "delivery_fee_inr", "60"); fee != "" {
-		fmt.Fprintf(&b, "Delivery charge: %s\n", formatINR(parseMoney(fee, 60)))
+	if fee := s.setting(ctx, "delivery_fee_inr", "120"); fee != "" {
+		fmt.Fprintf(&b, "Delivery charge: %s\n", formatINR(parseMoney(fee, 120)))
 	}
 	if threshold := s.setting(ctx, "free_shipping_over_inr", "1000"); threshold != "" {
 		fmt.Fprintf(&b, "Free delivery above %s.\n", formatINR(parseMoney(threshold, 1000)))

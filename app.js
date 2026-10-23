@@ -368,9 +368,9 @@ function cartTotals() {
   }, 0);
 
   const freeOver = Number(state.settings.free_shipping_over_inr || 1000);
-  const fee = Number(state.settings.delivery_fee_inr || 60);
+  const fee = Number(state.settings.delivery_fee_inr || 120);
   const safeFreeOver = isNaN(freeOver) ? 1000 : freeOver;
-  const safeFee = isNaN(fee) ? 60 : fee;
+  const safeFee = isNaN(fee) ? 120 : fee;
   const shipping = subtotal >= safeFreeOver ? 0 : safeFee;
 
   return { subtotal, shipping, total: subtotal + shipping };
@@ -645,7 +645,7 @@ function openCheckout() {
         state.deliveryRate = await api(`/delivery-rate?pincode=${encodeURIComponent(value)}`);
         const subtotal = cartTotals().subtotal;
         const freeOver = Number(state.settings.free_shipping_over_inr || 1000);
-        const shipping = subtotal >= freeOver ? 0 : Number(state.deliveryRate.charge_inr || 60);
+        const shipping = subtotal >= freeOver ? 0 : Number(state.deliveryRate.charge_inr || 120);
         $('#checkout-summary-shipping').textContent = shipping === 0 ? 'Free' : money(shipping);
         $('#checkout-summary-total').textContent = money(subtotal + shipping);
       } catch (error) {
@@ -869,6 +869,14 @@ async function init() {
     const [products, settings] = await Promise.all([api('/products'), api('/settings')]);
     state.products = products.products || [];
     state.settings = normalizeSettings(settings.settings || {});
+    // Products can be retired or recreated while a customer still has an
+    // older cart in localStorage. Remove those stale lines before checkout.
+    const validProductIds = new Set(state.products.map((product) => String(product.id)));
+    const cleanCart = state.cart.filter((item) => validProductIds.has(String(item.id)));
+    if (cleanCart.length !== state.cart.length) {
+      state.cart = cleanCart;
+      saveCart();
+    }
   } catch (error) {
     $('#product-grid').innerHTML = `<p class="cart-empty">We could not load the pantry just now. Please refresh in a moment.</p>`;
     return;

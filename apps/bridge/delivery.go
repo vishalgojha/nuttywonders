@@ -41,7 +41,7 @@ func (s *Server) handleDeliveryRate(w http.ResponseWriter, r *http.Request) {
 		// fully populated. The order RPC applies the same fallback server-side.
 		writeJSON(w, http.StatusOK, map[string]any{
 			"pincode": pincode, "area": "Other serviceable area",
-			"charge_inr": 60, "configured": false,
+			"charge_inr": 120, "configured": false,
 		})
 		return
 	}

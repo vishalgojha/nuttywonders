@@ -447,7 +447,7 @@ begin
   end if;
 
   v_free_over := coalesce(public.get_setting('free_shipping_over_inr', '1000')::numeric, 1000);
-  v_fee := coalesce(public.get_setting('delivery_fee_inr', '60')::numeric, 60);
+  v_fee := coalesce(public.get_setting('delivery_fee_inr', '120')::numeric, 120);
   v_pincode := regexp_replace(coalesce(p_address ->> 'pincode', ''), '\D', '', 'g');
   select charge_inr into v_zone_fee
   from public.delivery_pincode_rates

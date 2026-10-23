@@ -25,14 +25,13 @@ type checkoutAddress struct {
 }
 
 type checkoutRequest struct {
-	Name        string          `json:"name"`
-	Phone       string          `json:"phone"`
-	Email       string          `json:"email"`
-	Address     checkoutAddress `json:"address"`
-	Items       []checkoutLine  `json:"items"`
-	Note        string          `json:"note"`
-	Channel     string          `json:"channel"`
-	NotifyOwner *bool           `json:"notify_owner"`
+	Name    string          `json:"name"`
+	Phone   string          `json:"phone"`
+	Email   string          `json:"email"`
+	Address checkoutAddress `json:"address"`
+	Items   []checkoutLine  `json:"items"`
+	Note    string          `json:"note"`
+	Channel string          `json:"channel"`
 }
 
 func (s *Server) handleCheckout(w http.ResponseWriter, r *http.Request) {
@@ -72,22 +71,19 @@ func (s *Server) handleCheckout(w http.ResponseWriter, r *http.Request) {
 		channel = "web"
 	}
 
-	notifyOwner := true
-	if req.NotifyOwner != nil {
-		notifyOwner = *req.NotifyOwner
-	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), 25*time.Second)
 	defer cancel()
 
 	params := map[string]any{
-		"p_phone":          phone,
-		"p_name":           strings.TrimSpace(req.Name),
-		"p_items":          lines,
-		"p_address":        req.Address,
-		"p_channel":        channel,
-		"p_delivery_note":  strings.TrimSpace(req.Note),
-		"p_reply_to_owner": notifyOwner,
+		"p_phone":         phone,
+		"p_name":          strings.TrimSpace(req.Name),
+		"p_items":         lines,
+		"p_address":       req.Address,
+		"p_channel":       channel,
+		"p_delivery_note": strings.TrimSpace(req.Note),
+		// Online checkout creates the order before Razorpay confirms payment.
+		// The payment handler sends the owner alert after verification.
+		"p_reply_to_owner": false,
 	}
 
 	var result placeOrderResult
