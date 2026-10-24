@@ -312,10 +312,6 @@ func (w *whatsapp) handleEvent(raw any) {
 }
 
 func (w *whatsapp) handleInbound(evt *events.Message) {
-	if evt.Info.Chat.Server == types.HiddenUserServer {
-		return
-	}
-
 	cli := w.cli()
 	var own *types.JID
 	var ownLID *types.JID
@@ -327,6 +323,12 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 		}
 	}
 	selfChat := isSelfChat(evt.Info.Chat, own, ownLID)
+	// LID chats normally use the hidden-user server. Keep those out of the
+	// customer flow, but allow the paired account's own LID through as the
+	// dedicated admin self-chat path below.
+	if evt.Info.Chat.Server == types.HiddenUserServer && !selfChat {
+		return
+	}
 
 	// Messages the owner sends to customers from the paired phone are the
 	// owner's own replies and must never be answered by the bot. The only
@@ -340,9 +342,6 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 	}
 
 	body := evt.Message.GetConversation()
-	if strings.TrimSpace(body) == "" {
-		return
-	}
 
 	phone := phoneFromJID(evt.Info.Sender)
 	if selfChat && phone == "" && own != nil {
@@ -397,7 +396,7 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 	replyCtx, cancelReply := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancelReply()
 	if selfChat {
-		replyCtx = withAdminSelfChat(replyCtx)
+		replyCtx = withAdminSelfChat(replyCtx, evt.Info.Chat)
 	}
 	w.inbound(replyCtx, phone, body)
 }
@@ -431,6 +430,17 @@ var errNotConnected = errors.New("whatsapp is not connected yet")
 
 // SendText delivers one text message, splitting it if the body is long.
 func (w *whatsapp) SendText(ctx context.Context, phone, body string) error {
+	return w.sendTextToJID(ctx, types.NewJID(strings.TrimPrefix(phone, "+"), types.DefaultUserServer), phone, body)
+}
+
+// SendSelfChat delivers a reply to the exact self-chat JID WhatsApp supplied
+// for the inbound event. This matters when the chat is represented by an LID
+// rather than the account's phone-number JID.
+func (w *whatsapp) SendSelfChat(ctx context.Context, jid types.JID, phone, body string) error {
+	return w.sendTextToJID(ctx, jid, phone, body)
+}
+
+func (w *whatsapp) sendTextToJID(ctx context.Context, jid types.JID, phone, body string) error {
 	cli := w.cli()
 	if cli == nil || !cli.IsConnected() || !cli.IsLoggedIn() {
 		return errNotConnected
@@ -438,8 +448,6 @@ func (w *whatsapp) SendText(ctx context.Context, phone, body string) error {
 	if strings.TrimSpace(body) == "" {
 		return errors.New("refusing to send an empty message")
 	}
-
-	jid := types.NewJID(strings.TrimPrefix(phone, "+"), types.DefaultUserServer)
 
 	var lastID types.MessageID
 	for _, part := range splitForWhatsApp(body) {

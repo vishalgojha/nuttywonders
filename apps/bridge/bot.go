@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"go.mau.fi/whatsmeow/types"
 )
 
 // handleInboundWhatsApp turns a customer message into a helpful reply. It is
@@ -45,13 +47,21 @@ func (s *Server) handleInboundWhatsApp(ctx context.Context, phone, body string) 
 
 type adminSelfChatKey struct{}
 
-func withAdminSelfChat(ctx context.Context) context.Context {
-	return context.WithValue(ctx, adminSelfChatKey{}, true)
+type adminSelfChatTargetKey struct{}
+
+func withAdminSelfChat(ctx context.Context, target types.JID) context.Context {
+	ctx = context.WithValue(ctx, adminSelfChatKey{}, true)
+	return context.WithValue(ctx, adminSelfChatTargetKey{}, target)
 }
 
 func isAdminSelfChat(ctx context.Context) bool {
 	value, _ := ctx.Value(adminSelfChatKey{}).(bool)
 	return value
+}
+
+func adminSelfChatTarget(ctx context.Context) (types.JID, bool) {
+	target, ok := ctx.Value(adminSelfChatTargetKey{}).(types.JID)
+	return target, ok
 }
 
 // handleAdminSelfChat is deliberately command-based. The self-chat can see
@@ -98,8 +108,14 @@ func (s *Server) handleAdminSelfChat(ctx context.Context, body string) {
 	}
 	sendCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
-	if err := s.wa.SendText(sendCtx, s.currentPhone(ctx), reply); err != nil {
-		s.log.Warn("could not reply to admin self-chat", "error", err)
+	var sendErr error
+	if target, ok := adminSelfChatTarget(ctx); ok {
+		sendErr = s.wa.SendSelfChat(sendCtx, target, s.currentPhone(ctx), reply)
+	} else {
+		sendErr = s.wa.SendText(sendCtx, s.currentPhone(ctx), reply)
+	}
+	if sendErr != nil {
+		s.log.Warn("could not reply to admin self-chat", "error", sendErr)
 	}
 }
 

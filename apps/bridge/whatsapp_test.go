@@ -53,4 +53,7 @@ func TestIsSelfChat(t *testing.T) {
 	if !isSelfChat(ownLID, &own, &ownLID) {
 		t.Error("an account LID must be recognized as the self-chat")
 	}
+	if isSelfChat(types.NewJID("244418099544184", types.HiddenUserServer), &own, &ownLID) {
+		t.Error("another LID must not be recognized as the self-chat")
+	}
 }
