@@ -341,9 +341,12 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 		return
 	}
 
-	body := evt.Message.GetConversation()
+	body := messageText(evt.Message)
 
 	phone := phoneFromJID(evt.Info.Sender)
+	if phone == "" {
+		phone = phoneFromJID(evt.Info.SenderAlt)
+	}
 	if selfChat && phone == "" && own != nil {
 		phone = phoneFromJID(*own)
 	}
@@ -399,6 +402,21 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 		replyCtx = withAdminSelfChat(replyCtx, evt.Info.Chat)
 	}
 	w.inbound(replyCtx, phone, body)
+}
+
+// messageText handles both the original conversation field and WhatsApp's
+// extended text field. Linked-device/self-chat messages can use either form.
+func messageText(message *waE2E.Message) string {
+	if message == nil {
+		return ""
+	}
+	if text := message.GetConversation(); text != "" {
+		return text
+	}
+	if extended := message.GetExtendedTextMessage(); extended != nil {
+		return extended.GetText()
+	}
+	return ""
 }
 
 func containsPaymentProofLanguage(body string) bool {

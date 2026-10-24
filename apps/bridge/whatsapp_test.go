@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 )
 
@@ -55,5 +56,16 @@ func TestIsSelfChat(t *testing.T) {
 	}
 	if isSelfChat(types.NewJID("244418099544184", types.HiddenUserServer), &own, &ownLID) {
 		t.Error("another LID must not be recognized as the self-chat")
+	}
+}
+
+func TestMessageTextSupportsConversationAndExtendedText(t *testing.T) {
+	plain := "HELP"
+	if got := messageText(&waE2E.Message{Conversation: &plain}); got != plain {
+		t.Fatalf("plain messageText() = %q, want %q", got, plain)
+	}
+	extended := "ORDERS"
+	if got := messageText(&waE2E.Message{ExtendedTextMessage: &waE2E.ExtendedTextMessage{Text: &extended}}); got != extended {
+		t.Fatalf("extended messageText() = %q, want %q", got, extended)
 	}
 }
