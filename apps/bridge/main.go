@@ -47,37 +47,14 @@ func main() {
 	// Pairing needs network access to WhatsApp, so a failure here must not stop
 	// the shop from serving orders.
 	//
-	// Start owns the connection once it succeeds: WhatsMeow reconnects on its
-	// own and reports drops through events, so calling it again on a timer would
-	// replace a perfectly healthy session and earn a StreamReplaced from the
-	// server. Retry only when the initial dial actually failed.
+	// Run owns the connection once a session is established: WhatsMeow
+	// reconnects on its own and reports drops through events, so the only thing
+	// that restarts pairing is a session that actually ended (an unlinked
+	// device). Retrying on a timer would replace a healthy session and earn a
+	// StreamReplaced from the server.
 	waCtx, cancelWA := context.WithCancel(ctx)
 	defer cancelWA()
-	go func() {
-		backoff := 5 * time.Second
-		for attempt := 1; ; attempt++ {
-			err := wa.Start(waCtx)
-			if err == nil {
-				log.Info("whatsapp client started", "state", wa.state().Status)
-				return
-			}
-			if waCtx.Err() != nil {
-				return
-			}
-
-			log.Warn("whatsapp start failed", "attempt", attempt, "retry_in", backoff, "error", err)
-			wa.setState("error", "", "", err)
-
-			select {
-			case <-waCtx.Done():
-				return
-			case <-time.After(backoff):
-			}
-			if backoff < 2*time.Minute {
-				backoff *= 2
-			}
-		}
-	}()
+	go wa.Run(waCtx)
 
 	go server.runJobWorker(ctx)
 	go server.runRetentionSweep(ctx)

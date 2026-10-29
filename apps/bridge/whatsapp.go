@@ -36,6 +36,10 @@ type whatsapp struct {
 	store   *sqlstore.Container
 	inbound inboundHandler
 
+	// repair tells Run that the session it is holding is gone and a fresh
+	// pairing needs to start. Buffered by one: the request is idempotent.
+	repair chan struct{}
+
 	mu     sync.RWMutex
 	client *whatsmeow.Client
 	status string
@@ -53,7 +57,7 @@ func newWhatsApp(cfg Config, db *Client, log waLog.Logger) (*whatsapp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open whatsmeow store: %w", err)
 	}
-	return &whatsapp{db: db, log: log, config: cfg, store: container, status: "disconnected"}, nil
+	return &whatsapp{db: db, log: log, config: cfg, store: container, status: "disconnected", repair: make(chan struct{}, 1)}, nil
 }
 
 func (w *whatsapp) cli() *whatsmeow.Client {
@@ -96,6 +100,9 @@ func (w *whatsapp) setState(status, jid, qrCode string, cause error) {
 	if jid != "" {
 		payload["jid"] = jid
 	}
+	// Written every time, so a code that expired or was superseded does not
+	// stay in the connection row looking scannable.
+	payload["qr_code"] = nil
 	if qrCode != "" {
 		payload["qr_code"] = qrCode
 	}
@@ -107,6 +114,59 @@ func (w *whatsapp) setState(status, jid, qrCode string, cause error) {
 	defer cancel()
 	if err := w.db.Upsert(ctx, "whatsapp_connection", payload, nil); err != nil {
 		w.log.Warnf("could not persist whatsapp state: %v", err)
+	}
+}
+
+// Run keeps a usable WhatsApp session for the life of the process.
+//
+// WhatsMeow deletes the local credentials when the phone unlinks the device and
+// does not pair again by itself, so without this loop the bridge would report
+// "disconnected" with no QR code until the next container restart.
+func (w *whatsapp) Run(ctx context.Context) {
+	backoff := 5 * time.Second
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+
+		err := w.Start(ctx)
+		if err != nil {
+			if ctx.Err() != nil {
+				return
+			}
+			w.log.Warnf("whatsapp session failed: %v, retrying in %s", err, backoff)
+			w.setState("error", "", "", err)
+			if !sleepCtx(ctx, backoff) {
+				return
+			}
+			if backoff < 2*time.Minute {
+				backoff *= 2
+			}
+			continue
+		}
+
+		backoff = 5 * time.Second
+		// A session is live. Drop any repair request queued while it was being
+		// established, then wait for the next one.
+		select {
+		case <-w.repair:
+		default:
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-w.repair:
+			w.log.Infof("whatsapp session ended, pairing again")
+		}
+	}
+}
+
+// requestRepair hands the session back to Run so pairing can start over.
+func (w *whatsapp) requestRepair() {
+	select {
+	case w.repair <- struct{}{}:
+	default:
 	}
 }
 
@@ -192,6 +252,7 @@ func (w *whatsapp) pairLoop(ctx context.Context) error {
 		if err != nil {
 			cli.Disconnect()
 			w.log.Warnf("could not open whatsapp qr channel: %v", err)
+			w.setState("error", "", "", fmt.Errorf("could not open whatsapp qr channel: %w", err))
 			if !sleepCtx(ctx, 2*time.Second) {
 				return ctx.Err()
 			}
@@ -295,9 +356,18 @@ func (w *whatsapp) handleEvent(raw any) {
 
 	case *events.LoggedOut:
 		w.setState("disconnected", "", "", errors.New("session logged out, scan a new QR code"))
+		w.requestRepair()
 
 	case *events.StreamReplaced:
 		w.setState("disconnected", "", "", errors.New("replaced by another connection, is a second bridge running?"))
+
+	// Bans and connection refusals land on the server the pairing code is
+	// scanned from, so say so instead of leaving Studio on a bare "Offline".
+	case *events.TemporaryBan:
+		w.setState("error", "", "", errors.New(evt.String()))
+
+	case *events.ConnectFailure:
+		w.setState("error", "", "", fmt.Errorf("whatsapp rejected the connection: %v (%s)", evt.Reason, evt.Message))
 
 	case *events.PairSuccess:
 		w.mu.Lock()
@@ -532,9 +602,11 @@ func (w *whatsapp) Logout(ctx context.Context) error {
 	w.qr = ""
 	w.status = "disconnected"
 	w.lastErr = ""
+	w.client = nil
 	w.mu.Unlock()
 
 	w.setState("disconnected", "", "", nil)
+	w.requestRepair()
 	return nil
 }
 
