@@ -62,6 +62,33 @@ func TestIsSelfChat(t *testing.T) {
 	}
 }
 
+func TestInboundChatScope(t *testing.T) {
+	own := types.NewJID("918108398025", types.DefaultUserServer)
+	ownLID := types.NewJID("244418099544183", types.HiddenUserServer)
+
+	cases := []struct {
+		name string
+		chat types.JID
+		want bool
+	}{
+		{name: "one-to-one customer chat", chat: types.NewJID("919999999999", types.DefaultUserServer), want: true},
+		{name: "group chat", chat: types.NewJID("918108398025", types.GroupServer), want: false},
+		{name: "unrelated hidden-user chat", chat: types.NewJID("244418099544184", types.HiddenUserServer), want: false},
+		{name: "own self chat", chat: own, want: true},
+		{name: "own LID self chat", chat: ownLID, want: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			selfChat := isSelfChat(tc.chat, &own, &ownLID)
+			got := isSupportedInboundChat(tc.chat, selfChat)
+			if got != tc.want {
+				t.Fatalf("inbound chat scope for %v = %v, want %v", tc.chat, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestMessageTextSupportsConversationAndExtendedText(t *testing.T) {
 	plain := "HELP"
 	if got := messageText(&waE2E.Message{Conversation: &plain}); got != plain {

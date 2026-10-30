@@ -393,10 +393,14 @@ func (w *whatsapp) handleInbound(evt *events.Message) {
 		}
 	}
 	selfChat := isSelfChat(evt.Info.Chat, own, ownLID)
-	// LID chats normally use the hidden-user server. Keep those out of the
-	// customer flow, but allow the paired account's own LID through as the
-	// dedicated admin self-chat path below.
-	if evt.Info.Chat.Server == types.HiddenUserServer && !selfChat {
+	// The customer bot is only for one-to-one phone-number chats. Group,
+	// broadcast, status and newsletter events must never enter the customer
+	// flow: their sender can otherwise be mistaken for an individual customer
+	// and receive an unrelated reply.
+	//
+	// The paired account's own LID is the one exception, because WhatsApp can
+	// represent "Message yourself" with the hidden-user server.
+	if !isSupportedInboundChat(evt.Info.Chat, selfChat) {
 		return
 	}
 
@@ -503,6 +507,10 @@ func isSelfChat(chat types.JID, own, ownLID *types.JID) bool {
 		return true
 	}
 	return ownLID != nil && chat.Server == ownLID.Server && chat.User == ownLID.User
+}
+
+func isSupportedInboundChat(chat types.JID, selfChat bool) bool {
+	return selfChat || chat.Server == types.DefaultUserServer
 }
 
 func phoneFromJID(jid types.JID) string {
