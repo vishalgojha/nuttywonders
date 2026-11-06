@@ -64,9 +64,9 @@ func adminSelfChatTarget(ctx context.Context) (types.JID, bool) {
 	return target, ok
 }
 
-// handleAdminSelfChat is deliberately command-based. The self-chat can see
-// private operational data, so it must not be routed through the customer AI
-// prompt or expose data based on an ambiguous natural-language request.
+// handleAdminSelfChat stays separate from the customer AI prompt because the
+// self-chat can see private operational data. It accepts natural questions,
+// but only maps them to a small, safe set of operational lookups.
 func (s *Server) handleAdminSelfChat(ctx context.Context, body string) {
 	if !s.limit.allowKey("admin-self-chat", s.currentPhone(ctx), 30, time.Minute) {
 		return
@@ -97,7 +97,7 @@ func (s *Server) handleAdminSelfChat(ctx context.Context, body string) {
 	case lower == "stock" || lower == "inventory":
 		reply, err = s.adminInventory(ctx)
 	default:
-		reply = "I’m in admin mode. Reply HELP for commands."
+		reply, err = s.adminNaturalReply(ctx, text)
 	}
 	if err != nil {
 		s.log.Warn("admin self-chat command failed", "command", text, "error", err)
@@ -120,6 +120,31 @@ func (s *Server) handleAdminSelfChat(ctx context.Context, body string) {
 	if sendErr != nil {
 		s.log.Warn("could not reply to admin self-chat", "error", sendErr)
 	}
+}
+
+// adminNaturalReply makes the admin chat conversational without giving an
+// LLM unrestricted access to operational actions or customer data. Unknown
+// requests get a helpful scope hint and never trigger a message elsewhere.
+func (s *Server) adminNaturalReply(ctx context.Context, text string) (string, error) {
+	lower := strings.ToLower(strings.TrimSpace(text))
+	if code := orderCodePattern.FindString(strings.ToUpper(text)); code != "" {
+		return s.adminOrderLookup(ctx, code)
+	}
+
+	if matchesAny(lower, "pending", "unpaid", "not paid", "payment pending", "has paid", "haven't paid", "hasn't paid") {
+		return s.adminPendingOrders(ctx)
+	}
+	if matchesAny(lower, "stock", "inventory", "how many packs", "what do we have", "what's available", "whats available") {
+		return s.adminInventory(ctx)
+	}
+	if matchesAny(lower, "order", "orders", "new order", "recent", "today", "placed", "came in") {
+		return s.adminRecentOrders(ctx)
+	}
+	if matchesAny(lower, "customer", "customer details", "who is", "contact details") {
+		return "Tell me the customer’s name or phone number and I’ll look them up.", nil
+	}
+
+	return "I can help with recent orders, pending payments, customer details, and stock. Just ask me naturally. You can also send an order code.", nil
 }
 
 func (s *Server) adminRecentOrders(ctx context.Context) (string, error) {
