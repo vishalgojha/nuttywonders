@@ -89,6 +89,17 @@ func TestInboundChatScope(t *testing.T) {
 	}
 }
 
+func TestIsOwnJID(t *testing.T) {
+	own := types.NewJID("918108398025", types.DefaultUserServer)
+	lid := types.NewJID("244418099544183", types.HiddenUserServer)
+	if !isOwnJID(&own, &lid, own) || !isOwnJID(&own, &lid, lid) {
+		t.Fatal("paired phone and LID must be valid self-chat targets")
+	}
+	if isOwnJID(&own, &lid, types.NewJID("919999999999", types.DefaultUserServer)) {
+		t.Fatal("a customer JID must not be a valid self-chat target")
+	}
+}
+
 func TestMessageTextSupportsConversationAndExtendedText(t *testing.T) {
 	plain := "HELP"
 	if got := messageText(&waE2E.Message{Conversation: &plain}); got != plain {

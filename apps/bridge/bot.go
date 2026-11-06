@@ -108,12 +108,15 @@ func (s *Server) handleAdminSelfChat(ctx context.Context, body string) {
 	}
 	sendCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
-	var sendErr error
-	if target, ok := adminSelfChatTarget(ctx); ok {
-		sendErr = s.wa.SendSelfChat(sendCtx, target, s.currentPhone(ctx), reply)
-	} else {
-		sendErr = s.wa.SendText(sendCtx, s.currentPhone(ctx), reply)
+	target, ok := adminSelfChatTarget(ctx)
+	if !ok {
+		// Never fall back to the sender's phone here. A missing self-chat
+		// target must fail closed rather than turning an admin reply into a
+		// normal customer message.
+		s.log.Warn("refusing admin self-chat reply without target")
+		return
 	}
+	sendErr := s.wa.SendSelfChat(sendCtx, target, s.currentPhone(ctx), reply)
 	if sendErr != nil {
 		s.log.Warn("could not reply to admin self-chat", "error", sendErr)
 	}

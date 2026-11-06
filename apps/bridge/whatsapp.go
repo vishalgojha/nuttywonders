@@ -533,7 +533,28 @@ func (w *whatsapp) SendText(ctx context.Context, phone, body string) error {
 // for the inbound event. This matters when the chat is represented by an LID
 // rather than the account's phone-number JID.
 func (w *whatsapp) SendSelfChat(ctx context.Context, jid types.JID, phone, body string) error {
+	cli := w.cli()
+	var ownLID *types.JID
+	if cli != nil {
+		lid := cli.Store.GetLID()
+		if !lid.IsEmpty() {
+			ownLID = &lid
+		}
+	}
+	if cli == nil || !isOwnJID(cli.Store.ID, ownLID, jid) {
+		return errors.New("refusing to send self-chat message to a non-self JID")
+	}
 	return w.sendTextToJID(ctx, jid, phone, body)
+}
+
+// isOwnJID accepts only the paired account's phone JID or its linked-device
+// LID. Self-chat events can use either representation, but neither should ever
+// be allowed to send to an arbitrary JID supplied by an inbound event.
+func isOwnJID(own, ownLID *types.JID, target types.JID) bool {
+	if own != nil && target == *own {
+		return true
+	}
+	return ownLID != nil && target == *ownLID
 }
 
 func (w *whatsapp) sendTextToJID(ctx context.Context, jid types.JID, phone, body string) error {
